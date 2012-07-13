@@ -1,49 +1,26 @@
+module Mine where
 
-> import Control.Applicative (<$>)
-> import Prelude hiding (Either(..))
-> import System.IO (hGetContents, stdin)
-> import Control.Monad.State
+import Prelude hiding (Either(..))
 
-> import Mine
-> import AStar
+import Core
 
--- loldicks
--- [[KeepCalmCurryOn]]
+toChar :: Obj -> Char
+toChar obj = ['R','#','*','\\','L','O','.',' '] !! (fromEnum obj)
 
-   
+toObj :: Char -> Obj
+toObj 'R'  = Robot
+toObj '#'  = Wall
+toObj '*'  = Rock
+toObj '\\' = Lambda
+toObj 'L'  = ClosedLift
+toObj 'O'  = OpenLift
+toObj '.'  = Earth
+toObj ' '  = Empty
 
-> data Cmd = Left
->          | Right
->          | Up
->          | Down
->          | Wait
->          | Abort
->          deriving (Eq, Ord)
-    
-> type Path = [Cmd]
-
-> showCmd :: Cmd -> Char
-> showCmd Left  = 'L'
-> showCmd Right = 'R'
-> showCmd Up    = 'U'
-> showCmd Down  = 'D'
-> showCmd Wait  = 'W'
-> showCmd Abort = 'A'
-
-> showPath :: Path -> String
-> showPath = map showCmd
-
-> move :: Pos -> Cmd -> Pos
-> move (x, y) Left  = (x - 1, y)
-> move (x, y) Right = (x + 1, y)
-> move (x, y) Up    = (x, y + 1)
-> move (x, y) Down  = (x, y - 1)
-> move (x, y) Wait  = (x, y)
-> move (x, y) Abort = error "~gmh for prime minister"
-
+showMap :: Mine -> String
+showMap = unlines . map (map toChar)
 -- does NOT include the falling rocks, the main 
 -- function will deal with this
-
 moveRobot :: Cmd -> Mine -> Mine
 moveRobot cmd mn | isValidMove   mn cmd && 
                    rockNeedsPushing mn cmd = let rPos = robotPos mn
@@ -65,20 +42,23 @@ isValidMove mine cmd | objAt mine (move robot cmd) `elem`
 isValidMove _ _ = False
 
 rockNeedsPushing :: Mine -> Cmd -> Bool
-rockNeedsPushing mn cmd | cmd `elem` [Left, Right] && 
-                       objAt mine (move robot cmd) == Rock && 
-                       objAt mine (move (move robot cmd) cmd) == Empty 
-                                    = True
-                        | otherwise = False
+rockNeedsPushing mine cmd
+    | cmd `elem` [Left, Right] && 
+      objAt mine (move robot cmd) == Rock && 
+      objAt mine (move (move robot cmd) cmd) == Empty 
+        = True
+    | otherwise
+        = False
+    where robot = robotPos mine
 
 -- if we move onto an open lift, we win
 isWinningMove :: Cmd -> Mine -> Bool
-isWinningMove cmd mine = objAt (move cmd mine) == OpenLift
+isWinningMove cmd mine = objAt mine (move (robotPos mine) cmd) == OpenLift
 
 -- if we update the state and then have a rock above us, we lose
 willThisMoveKillUs :: Cmd -> Mine -> Bool
 willThisMoveKillUs cmd mine | not (isWinningMove cmd mine)
-    = objAt (move (robotPos mine) Up) mine' == Rock
+    = objAt mine' (move (robotPos mine) Up) == Rock
     where mine' = moveRocks (moveRobot cmd mine)
 
 updateMine :: Cmd -> Mine -> Mine
@@ -140,30 +120,15 @@ mineWidth = length . head
 mineSize :: Mine -> (Int, Int)
 mineSize m = (mineWidth m, mineHeight m)
 
-> robotPos :: Mine -> Pos
+robotPos :: Mine -> Pos
 -- XXX: if there is no robot, CRASH
-> robotPos = head . objPos Robot
+robotPos = head . objPos Robot
 
-> rockPos :: Mine -> [Pos]
-> rockPos = objPos Rock
+rockPos :: Mine -> [Pos]
+rockPos = objPos Rock
 
-> objPos :: Obj -> Mine -> [Pos]
-> objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . concat . numberMine
+objPos :: Obj -> Mine -> [Pos]
+objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . concat . numberMine
 
-> objAt :: Mine -> Pos -> Obj
-> objAt mine (x,y) = (mine !! (y - 1)) !! (x - 1)
-
--- I/O Stuff
-
-> getStdInContents :: IO [String]
-> getStdInContents = lines `fmap` hGetContents stdin
-
-> strToMine :: [String] -> Mine
-> strToMine = map (map toObj)
-
-> readMap :: IO Mine
-> readMap = strToMine <$> getStdInContents
-
-> main :: IO ()
-> main = readMap >>= putStrLn . run
-
+objAt :: Mine -> Pos -> Obj
+objAt mine (x,y) = (mine !! (y - 1)) !! (x - 1)
