@@ -5,6 +5,7 @@
 > import Control.Monad.State
 
 > import Mine
+> import AStar
 
 -- loldicks
 -- [[KeepCalmCurryOn]]
