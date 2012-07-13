@@ -1,4 +1,4 @@
-module Core (Obj(..), Mine(..), Cmd(..), Path, Pos, showCmd, showPath, move) where
+module Core where
 
 import Prelude hiding (Either(..))
 

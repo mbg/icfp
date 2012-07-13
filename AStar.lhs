@@ -38,6 +38,5 @@ Finds the positions adjacent to the robot's current position.
 > path m x y = undefined
 
 
-
 > run :: Mine -> String
 > run = undefined
