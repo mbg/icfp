@@ -44,12 +44,12 @@ Finds the positions adjacent to a position.
 {-- A* Search                                                         -}
 {----------------------------------------------------------------------} 
 
-> astar :: Mine -> Pos -> Pos -> [Pos] -> Path -> Path
-> astar _ x y _ _ | x == y = []
-> astar m x y c p          = undefined -- surroundings m x
+> astar :: Mine -> [Pos] -> Pos -> [Pos] -> Path -> Path
+> astar _ (x:_)  y _ _ | x == y = []
+> astar m (x:xs) y c p          = surroundings m x
 
 > path :: Mine -> Pos -> Pos -> Path
-> path m x y = astar m x y [] []
+> path m x y = astar m [x] y [] []
 
 {----------------------------------------------------------------------}
 {-- Main Search Algorithm                                             -}
