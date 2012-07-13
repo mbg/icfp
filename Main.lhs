@@ -1,52 +1,33 @@
-mport Prelude hiding (Either(..))
-import System.IO (hGetContents, stdin)
-import Control.Monad.State
+
+> import Control.Applicative (<$>)
+> import Prelude hiding (Either(..))
+> import System.IO (hGetContents, stdin)
+> import Control.Monad.State
+
+> import Mine
 
 -- loldicks
 -- [[KeepCalmCurryOn]]
 
-data Obj = Robot | Wall
-         | Rock  | Lambda
-         | ClosedLift| OpenLift
-         | Earth | Empty
-   deriving (Eq, Ord, Enum)
    
-type Mine = [[Obj]]
-type Pos  = (Int, Int)
 
-toChar :: Obj -> Char
-toChar obj = ['R','#','*','\\','L','O','.',' '] !! (fromEnum obj)
-
-toObj :: Char -> Obj
-toObj 'R'  = Robot
-toObj '#'  = Wall
-toObj '*'  = Rock
-toObj '\\' = Lambda
-toObj 'L'  = ClosedLift
-toObj 'O'  = OpenLift
-toObj '.'  = Earth
-toObj ' '  = Empty
-
-showMap :: Mine -> String
-showMap = unlines . map (map toChar)
-
-data Cmd = Left
-         | Right
-         | Up
-         | Down
-         | Wait
-         | Abort
-    deriving (Eq, Ord)
+> data Cmd = Left
+>          | Right
+>          | Up
+>          | Down
+>          | Wait
+>          | Abort
+>          deriving (Eq, Ord)
     
-type Path = [Cmd]
+> type Path = [Cmd]
 
-move :: Pos -> Cmd -> Pos
-move (x, y) Left  = (x - 1, y)
-move (x, y) Right = (x + 1, y)
-move (x, y) Up    = (x, y + 1)
-move (x, y) Down  = (x, y - 1)
-move (x, y) Wait  = (x, y)
-move (x, y) Abort = error "~gmh for prime minister"
+> move :: Pos -> Cmd -> Pos
+> move (x, y) Left  = (x - 1, y)
+> move (x, y) Right = (x + 1, y)
+> move (x, y) Up    = (x, y + 1)
+> move (x, y) Down  = (x, y - 1)
+> move (x, y) Wait  = (x, y)
+> move (x, y) Abort = error "~gmh for prime minister"
 
 -- does NOT include the falling rocks, the main 
 -- function will deal with this
@@ -189,17 +170,15 @@ run = undefined
 
 -- I/O Stuff
 
-getStdInContents :: IO [String]
-getStdInContents = lines `fmap` hGetContents stdin
+> getStdInContents :: IO [String]
+> getStdInContents = lines `fmap` hGetContents stdin
 
-strToMine :: [String] -> Mine
-strToMine = map (map toObj)
+> strToMine :: [String] -> Mine
+> strToMine = map (map toObj)
 
-readMap :: IO Mine
-readMap = do
-    xxs <- getStdInContents
-    return $ strToMine xxs
+> readMap :: IO Mine
+> readMap = strToMine <$> getStdInContents
 
-main :: IO ()
-main = readMap >>= putStrLn . run
+> main :: IO ()
+> main = readMap >>= putStrLn . run
 
