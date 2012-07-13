@@ -38,11 +38,23 @@ Finds the positions adjacent to the robot's current position.
 > path :: Mine -> Pos -> Pos -> Path
 > path m x y = undefined
 
-> simulate :: Mine -> [Pos] -> [Path]
-> simulate m = map (path m ??)
+> simulate :: Mine -> Path -> Path
+> simulate m []     = (choose . search) m
+> simulate m (x:xs) = x : simulate (updateMine x m) xs
+
+> simulatePaths :: Mine -> [Path] -> [Path]
+> simulatePaths m ps = map (simulate m) ps
+
+> findPaths :: Mine -> Pos -> [Pos] -> [Path]
+> findPaths m p ps = map (path m p) ps
 
 > search :: Mine -> [Path]
-> search m = simulate m (findLambdas m)
+> search m = simulate m $ findPaths m (robotPos m) (findLambdas m)
+
+I would like more information than just a Path (i.e. the # of lambdas collected).Currently we only consider the length.
+
+> choose :: [Path] -> Path
+> choose ps = head $ sort [(length p,p) | p <- ps]
 
 > run :: Mine -> String
 > run = showPath . choose . search
