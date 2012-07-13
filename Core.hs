@@ -25,6 +25,19 @@ data Cmd = Left
     
 type Path = [Cmd]
 
+toChar :: Obj -> Char
+toChar obj = ['R','#','*','\\','L','O','.',' '] !! (fromEnum obj)
+
+toObj :: Char -> Obj
+toObj 'R'  = Robot
+toObj '#'  = Wall
+toObj '*'  = Rock
+toObj '\\' = Lambda
+toObj 'L'  = ClosedLift
+toObj 'O'  = OpenLift
+toObj '.'  = Earth
+toObj ' '  = Empty
+
 showCmd :: Cmd -> Char
 showCmd Left  = 'L'
 showCmd Right = 'R'

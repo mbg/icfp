@@ -3,19 +3,7 @@ module Mine where
 import Prelude hiding (Either(..))
 
 import Core
-
-toChar :: Obj -> Char
-toChar obj = ['R','#','*','\\','L','O','.',' '] !! (fromEnum obj)
-
-toObj :: Char -> Obj
-toObj 'R'  = Robot
-toObj '#'  = Wall
-toObj '*'  = Rock
-toObj '\\' = Lambda
-toObj 'L'  = ClosedLift
-toObj 'O'  = OpenLift
-toObj '.'  = Earth
-toObj ' '  = Empty
+import Control.Monad.State
 
 showMap :: Mine -> String
 showMap = unlines . map (map toChar)
