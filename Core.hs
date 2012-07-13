@@ -60,6 +60,7 @@ showPath :: Path -> String
 showPath = map showCmd
 
 move :: Pos -> Cmd -> Pos
+
 move (Pos (x, y)) Left  = Pos (x - 1, y)
 move (Pos (x, y)) Right = Pos (x + 1, y)
 move (Pos (x, y)) Up    = Pos (x, y + 1)
