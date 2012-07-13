@@ -33,11 +33,16 @@ Finds the positions adjacent to the robot's current position.
 > surroundings m = limit (mineSize m) (neighbours (robotPos m))
 
 > astar :: Mine -> Pos -> Pos -> [Pos] -> Path -> Path
+> astar _ x y _ = 
 
 > path :: Mine -> Pos -> Pos -> Path
 > path m x y = undefined
 
+> simulate :: Mine -> [Pos] -> [Path]
+> simulate m = map (path m ??)
 
+> search :: Mine -> [Path]
+> search m = simulate m (findLambdas m)
 
 > run :: Mine -> String
-> run = undefined
+> run = showPath . choose . search
