@@ -1,6 +1,9 @@
-module Core (Obj(..), Mine(..), Cmd(..), Path, Pos, showCmd, showPath, move) where
+module Core where
 
 import Prelude hiding (Either(..))
+import Data.Array.IArray (Array)
+import Data.Ix
+import Data.Tuple (swap)
 
 data Obj = Robot 
          | Wall
@@ -12,8 +15,15 @@ data Obj = Robot
          | Empty
          deriving (Eq, Ord, Enum)
 
-type Mine = [[Obj]]
-type Pos  = (Int, Int)
+type Mine = Array Pos Obj
+newtype Pos = Pos {unPos :: (Int, Int)}
+    deriving (Eq, Ord, Show)
+
+-- in order to get [(1,1), (2,1), (3,1), ...] order
+instance Ix Pos where
+    range (Pos pos1, Pos pos2)                   = map (Pos . swap) (range (pos1, pos2))
+    index (Pos (x1,y1), Pos (x2,y2)) (Pos (x,y)) = index ((y1,x1),(y2,x2)) (y,x)
+    inRange (Pos pos1, Pos pos2) (Pos x)         = inRange (pos1, pos2) x
 
 data Cmd = Left
          | Right
@@ -50,9 +60,9 @@ showPath :: Path -> String
 showPath = map showCmd
 
 move :: Pos -> Cmd -> Pos
-move (x, y) Left  = (x - 1, y)
-move (x, y) Right = (x + 1, y)
-move (x, y) Up    = (x, y + 1)
-move (x, y) Down  = (x, y - 1)
-move (x, y) Wait  = (x, y)
-move (x, y) Abort = error "~gmh for prime minister"
+move (Pos (x, y)) Left  = Pos (x - 1, y)
+move (Pos (x, y)) Right = Pos (x + 1, y)
+move (Pos (x, y)) Up    = Pos (x, y + 1)
+move (Pos (x, y)) Down  = Pos (x, y - 1)
+move (Pos (x, y)) Wait  = Pos (x, y)
+move _            Abort = error "~gmh for prime minister"

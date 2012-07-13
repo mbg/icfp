@@ -13,15 +13,5 @@ import Core
    
 
 -- I/O Stuff
-
-getStdInContents :: IO [String]
-getStdInContents = lines `fmap` hGetContents stdin
-
-strToMine :: [String] -> Mine
-strToMine = map (map toObj)
-
-readMap :: IO Mine
-readMap = strToMine <$> getStdInContents
-
 main :: IO ()
-main = readMap >>= putStrLn . run
+main = (readMine <$> getContents) >>= putStrLn . run

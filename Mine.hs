@@ -1,12 +1,27 @@
 module Mine where
 
+import Data.Array.IArray
+import Data.Tuple (swap)
 import Prelude hiding (Either(..))
 
 import Core
-import Control.Monad.State
+
+-- TODO: padding
+readMine :: String -> Mine
+readMine str = listArray (Pos (1,1), Pos (maxX, maxY)) (concat (pad maxX (map (map toObj) rows)))
+    where rows = lines str
+          maxY = length rows
+          maxX = maximum (map length rows)
+          pad :: Int -> [a] -> [a]
+          pad = undefined
 
 showMap :: Mine -> String
-showMap = unlines . map (map toChar)
+showMap mine = intersperseEvery '\n' width . map toChar . elems $ mine
+    where
+    intersperseEvery :: a -> Int -> [a] -> [a]
+    intersperseEvery = undefined
+    (width, _) = mineSize mine
+
 -- does NOT include the falling rocks, the main 
 -- function will deal with this
 moveRobot :: Cmd -> Mine -> Mine
@@ -44,6 +59,7 @@ isWinningMove :: Cmd -> Mine -> Bool
 isWinningMove cmd mine = objAt mine (move (robotPos mine) cmd) == OpenLift
 
 -- if we update the state and then have a rock above us, we lose
+-- XXX: EXCEPT IF ROCK HASN'T MOVED
 willThisMoveKillUs :: Cmd -> Mine -> Bool
 willThisMoveKillUs cmd mine | not (isWinningMove cmd mine)
     = objAt mine' (move (robotPos mine) Up) == Rock
@@ -67,16 +83,13 @@ moveRocks mine = foldl (setObj Rock) mine newRocks
     mine'    = foldl (setObj Empty) mine oldRocks
 
 setObj :: Obj -> Mine -> Pos -> Mine
-setObj obj mine pos = map (map setObjCell) (numberMine mine)
+setObj obj mine pos = listArray (bounds mine) . map setObjCell . assocs $ mine
     where setObjCell (pos', obj') | pos' == pos = obj
                                   | otherwise   = obj'
 
-numberMine :: Mine -> [[(Pos, Obj)]]
-numberMine mine = [[((x,y), obj) | (x, obj) <- zip [1..] row] | (y, row) <- zip [1..] mine]
-
 newRockPos :: Mine -> Pos -> Pos
 -- assumes that there is a rock at oldPos
-newRockPos mine (x, y)
+newRockPos mine pos
     | objAt' down      == Empty = down
     | objAt' down      == Rock &&
       objAt' right     == Empty &&
@@ -87,26 +100,20 @@ newRockPos mine (x, y)
     | objAt' down      == Lambda &&
       objAt' right     == Empty &&
       objAt' downRight == Empty = downRight
-    | otherwise                 = (x, y)
+    | otherwise                 = pos
     where objAt'    = objAt mine
-          down      = (x  , y-1)
-          downLeft  = (x-1, y-1)
-          downRight = (x+1, y-1)
-          left      = (x-1, y)
-          right     = (x+1, y)
+          down      = move pos Down
+          downLeft  = move (move pos Down) Left
+          downRight = move (move pos Down) Right
+          left      = move pos Left
+          right     = move pos Right
 
 -- down with lambdas, up with lifting
 noLambdas :: Mine -> Bool
-noLambdas = all (all (/= Lambda))
-
-mineHeight :: Mine -> Int
-mineHeight = length
-
-mineWidth :: Mine -> Int
-mineWidth = length . head
+noLambdas = all (/= Lambda) . elems
 
 mineSize :: Mine -> (Int, Int)
-mineSize m = (mineWidth m, mineHeight m)
+mineSize = unPos . snd .  bounds
 
 robotPos :: Mine -> Pos
 -- XXX: if there is no robot, CRASH
@@ -116,7 +123,7 @@ rockPos :: Mine -> [Pos]
 rockPos = objPos Rock
 
 objPos :: Obj -> Mine -> [Pos]
-objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . concat . numberMine
+objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . assocs
 
 objAt :: Mine -> Pos -> Obj
-objAt mine (x,y) = (mine !! (y - 1)) !! (x - 1)
+objAt = (!)
