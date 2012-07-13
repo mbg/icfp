@@ -8,18 +8,21 @@ import Core
 
 -- TODO: padding
 readMine :: String -> Mine
-readMine str = listArray (Pos (1,1), Pos (maxX, maxY)) (concat (pad maxX (map (map toObj) rows)))
-    where rows = lines str
-          maxY = length rows
-          maxX = maximum (map length rows)
-          pad :: Int -> [a] -> [a]
-          pad = undefined
+readMine str = listArray (Pos (1,1), Pos (maxX, maxY)) (concatMap (pad maxX . map toObj) rows)
+    where
+    rows = lines str
+    maxY = length rows
+    maxX = maximum (map length rows)
+    pad :: Int -> [Obj] -> [Obj]
+    pad n xs | len < n   = xs ++ replicate (n - len) Empty
+             | otherwise = xs
+        where len = length xs
 
 showMap :: Mine -> String
 showMap mine = intersperseEvery '\n' width . map toChar . elems $ mine
     where
     intersperseEvery :: a -> Int -> [a] -> [a]
-    intersperseEvery = undefined
+    intersperseEvery x n xs = let (pre, post) = splitAt n xs in pre ++ (x:post) ++ intersperseEvery x n post
     (width, _) = mineSize mine
 
 -- does NOT include the falling rocks, the main 
@@ -69,13 +72,11 @@ updateMine :: Cmd -> Mine -> Mine
 updateMine cmd = updateLifts . moveRocks . moveRobot cmd
 
 updateLifts :: Mine -> Mine
--- XXX: slowish with lists
 updateLifts mine | noLambdas mine = foldl (setObj OpenLift) 
                                     mine (objPos ClosedLift mine)
                  | otherwise      = mine
 
 moveRocks :: Mine -> Mine
---- XXX: slowish with lists
 moveRocks mine = foldl (setObj Rock) mine newRocks
     where
     oldRocks = rockPos mine
