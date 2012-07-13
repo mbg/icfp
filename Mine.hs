@@ -115,6 +115,9 @@ noLambdas = all (/= Lambda) . elems
 mineSize :: Mine -> (Int, Int)
 mineSize = unPos . snd .  bounds
 
+findLambdas :: Mine -> [Pos]
+findLambdas = objPos Lambda
+
 robotPos :: Mine -> Pos
 -- XXX: if there is no robot, CRASH
 robotPos = head . objPos Robot
