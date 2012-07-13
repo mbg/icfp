@@ -2,6 +2,7 @@ mport Prelude hiding (Either(..))
 import System.IO (hGetContents, stdin)
 import Control.Monad.State
 
+-- loldicks
 -- [[KeepCalmCurryOn]]
 
 data Obj = Robot | Wall
