@@ -68,9 +68,6 @@ willThisMoveKillUs cmd mine | not (isWinningMove cmd mine)
 updateMine :: Cmd -> Mine -> Mine
 updateMine cmd = updateLifts . moveRocks . moveRobot cmd
 
-mineExited :: Mine -> Bool
-mineExited mn = let openLifts = objPos OpenLift in elem 
-
 updateLifts :: Mine -> Mine
 -- XXX: slowish with lists
 updateLifts mine | noLambdas mine = foldl (setObj OpenLift) 
