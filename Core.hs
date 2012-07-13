@@ -3,15 +3,16 @@ module Core where
 import Prelude hiding (Either(..))
 import Data.Array.IArray (Array)
 import Data.Ix
+import Data.Maybe (fromJust)
 import Data.Tuple (swap)
 
-data Obj = Robot 
+data Obj = Robot
          | Wall
-         | Rock  
+         | Rock
          | Lambda
          | ClosedLift
          | OpenLift
-         | Earth 
+         | Earth
          | Empty
          deriving (Eq, Ord, Enum)
 
@@ -32,21 +33,24 @@ data Cmd = Left
          | Wait
          | Abort
          deriving (Eq, Ord)
-    
+
 type Path = [Cmd]
 
 toChar :: Obj -> Char
-toChar obj = ['R','#','*','\\','L','O','.',' '] !! (fromEnum obj)
+toChar = fromJust . flip lookup (map swap charObjs)
 
 toObj :: Char -> Obj
-toObj 'R'  = Robot
-toObj '#'  = Wall
-toObj '*'  = Rock
-toObj '\\' = Lambda
-toObj 'L'  = ClosedLift
-toObj 'O'  = OpenLift
-toObj '.'  = Earth
-toObj ' '  = Empty
+toObj = fromJust . flip lookup charObjs
+
+charObjs :: [(Char, Obj)]
+charObjs = [('R' , Robot)
+         ,('#' , Wall)
+         ,('*' , Rock)
+         ,('\\', Lambda)
+         ,('L' , ClosedLift)
+         ,('O' , OpenLift)
+         ,('.' , Earth)
+         ,(' ' , Empty)]
 
 showCmd :: Cmd -> Char
 showCmd Left  = 'L'
@@ -60,7 +64,6 @@ showPath :: Path -> String
 showPath = map showCmd
 
 move :: Pos -> Cmd -> Pos
-
 move (Pos (x, y)) Left  = Pos (x - 1, y)
 move (Pos (x, y)) Right = Pos (x + 1, y)
 move (Pos (x, y)) Up    = Pos (x, y + 1)
