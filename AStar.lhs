@@ -43,6 +43,8 @@ XXX: doesn't consider a robot pushing rocks
 >          newMine = setRobotPos m p
 >          inBounds = inRange (bounds (grid m)) . move p
            
+> nextPossibleStates :: Mine -> [Mine]
+> nextPossibleStates mn = undefined
 
 > action :: Pos -> Pos -> Cmd
 > action (Pos (x,y)) (Pos (a,b)) 
