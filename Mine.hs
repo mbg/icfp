@@ -26,12 +26,8 @@ showMine mine = unlines . reverse . splitAtEvery width . map toChar . elems $ mi
     splitAtEvery n xs = let (x,xs') = splitAt n xs in x : splitAtEvery n xs'
     (width, _) = mineSize mine
 
-<<<<<<< HEAD
--- does NOT include the falling rocks, the main function will deal with this
-=======
 -- does NOT include the falling rocks, the main
 -- function will deal with this
->>>>>>> dca58b65fe307a07d309ef80478f8de2545d30d6
 moveRobot :: Cmd -> Mine -> Mine
 moveRobot cmd mn | isValidMove   mn cmd &&
                    rockNeedsPushing mn cmd = let rPos = robotPos mn
@@ -75,13 +71,8 @@ isLosingMove cmd mine | not (isWinningMove cmd mine)
       objAt mine  (move (robotPos mine') Up) /= Rock
     where mine' = fst . moveRocks. moveRobot cmd $ mine
 
-<<<<<<< HEAD
-updateMine :: Mine -> Mine
-updateMine = updateLifts . floodMine . moveRocks
-=======
 updateMine :: Cmd -> Mine -> Mine
 updateMine cmd = updateLifts . fst . moveRocks . moveRobot cmd
->>>>>>> dca58b65fe307a07d309ef80478f8de2545d30d6
 
 updateLifts :: Mine -> Mine
 updateLifts mine | noLambdas mine = foldl (setObj OpenLift)

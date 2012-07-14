@@ -1,14 +1,5 @@
 module Core where
 
-<<<<<<< HEAD
-move (Pos (x, y)) Left  = Pos (x - 1, y)
-move (Pos (x, y)) Right = Pos (x + 1, y)
-move (Pos (x, y)) Up    = Pos (x, y + 1)
-move (Pos (x, y)) Down  = Pos (x, y - 1)
-move (Pos (x, y)) Wait  = Pos (x, y)
-move _            Abort = error "~gmh for prime minister"
-
-=======
 import Prelude hiding (Either(..))
 import Data.Array.IArray (Array)
 import Data.Ix
@@ -79,4 +70,3 @@ move (Pos (x, y)) Up    = Pos (x, y + 1)
 move (Pos (x, y)) Down  = Pos (x, y - 1)
 move (Pos (x, y)) Wait  = Pos (x, y)
 move _            Abort = error "~gmh for prime minister"
->>>>>>> dca58b65fe307a07d309ef80478f8de2545d30d6
