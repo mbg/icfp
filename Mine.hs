@@ -1,14 +1,15 @@
 module Mine where
 
+import Control.Applicative ((<$>))
 import Data.Array.IArray
 import Data.Maybe (isJust)
 import Prelude hiding (Either(..))
 
 import Core
-import Flooding
+--import Flooding
 
 readMine :: String -> Mine
-readMine str = listArray (Pos (1,1), Pos (maxX, maxY)) (concatMap (pad maxX . map toObj) rows)
+readMine str = Mine {grid = listArray (Pos (1,1), Pos (maxX, maxY)) (concatMap (pad maxX . map toObj) rows)}
     where
     rows = reverse (lines str)
     maxY = length rows
@@ -19,29 +20,23 @@ readMine str = listArray (Pos (1,1), Pos (maxX, maxY)) (concatMap (pad maxX . ma
         where len = length xs
 
 showMine :: Mine -> String
-showMine mine = unlines . reverse . splitAtEvery width . map toChar . elems $ mine
+showMine mine = unlines . reverse . splitAtEvery width . map toChar . elems . grid $ mine
     where
     splitAtEvery :: Int -> [a] -> [[a]]
     splitAtEvery _ [] = []
     splitAtEvery n xs = let (x,xs') = splitAt n xs in x : splitAtEvery n xs'
     (width, _) = mineSize mine
 
-<<<<<<< HEAD
--- does NOT include the falling rocks, the main function will deal with this
-=======
 -- does NOT include the falling rocks, the main
 -- function will deal with this
->>>>>>> dca58b65fe307a07d309ef80478f8de2545d30d6
 moveRobot :: Cmd -> Mine -> Mine
-moveRobot cmd mn | isValidMove   mn cmd &&
-                   rockNeedsPushing mn cmd = let rPos = robotPos mn
-                                                 rnewPos = move rPos cmd
-                                                 rockPos = move rnewPos cmd in
-                         setObj Rock (setObj Robot (setObj Empty mn rPos) rnewPos) rockPos
-                 | isValidMove mn cmd = let rPos     = robotPos mn
-                                            rnewPos  = move rPos cmd in
-                         setObj Robot (setObj Empty mn rPos) rnewPos
+moveRobot cmd mn | valid && rockNeedsPushing mn cmd = moveObj (moveObj mn newRobot newRock) oldRobot newRobot -- move the rock then move the robot
+                 | valid = moveObj mn oldRobot newRobot -- just move the robot
                  | otherwise          = mn
+    where valid = isValidMove mn cmd
+          oldRobot = robotPos mn
+          newRobot = move oldRobot cmd
+          newRock  = move newRobot cmd
 
 isValidMove :: Mine -> Cmd -> Bool
 isValidMove mine cmd
@@ -52,6 +47,13 @@ isValidMove mine cmd
         = True
     where robot = robotPos mine
 isValidMove _ _ = False
+
+-- move an object from its old position to a new position and leave Empty behind
+moveObj :: Mine -> Pos -> Pos -> Mine
+moveObj mine old new = setObj (objAt mine old) (setObj Empty mine old) new
+
+setRobotPos :: Mine -> Pos -> Mine
+setRobotPos mine = moveObj mine (robotPos mine)
 
 rockNeedsPushing :: Mine -> Cmd -> Bool
 rockNeedsPushing mine cmd
@@ -64,29 +66,27 @@ rockNeedsPushing mine cmd
     where robot = robotPos mine
 
 -- if we move onto an open lift, we win: also provides the command to exit the mine
-isWinningMove :: Cmd -> Mine -> (Bool, Cmd)
-isWinningMove cmd mine = (objAt mine (move (robotPos mine) cmd) == OpenLift, cmd)
+-- djm: why would we want to return the command that we just gave it?
+isWinningMove :: Mine -> Cmd -> Bool
+isWinningMove mine cmd = objAt mine (move (robotPos mine) cmd) == OpenLift
 
 -- if we update the state and then have a rock above us
 -- that wasn't there before, we lose
-isLosingMove :: Cmd -> Mine -> Bool
-isLosingMove cmd mine | not (isWinningMove cmd mine)
-    = objAt mine' (move (robotPos mine') Up) == Rock &&
-      objAt mine  (move (robotPos mine') Up) /= Rock
+isLosingMove :: Mine -> Cmd -> Bool
+isLosingMove mine cmd =
+    objAt mine' (move (robotPos mine') Up) == Rock &&
+    objAt mine  (move (robotPos mine') Up) /= Rock
     where mine' = fst . moveRocks. moveRobot cmd $ mine
 
-<<<<<<< HEAD
-updateMine :: Mine -> Mine
-updateMine = updateLifts . floodMine . moveRocks
-=======
 updateMine :: Cmd -> Mine -> Mine
 updateMine cmd = updateLifts . fst . moveRocks . moveRobot cmd
->>>>>>> dca58b65fe307a07d309ef80478f8de2545d30d6
 
 updateLifts :: Mine -> Mine
-updateLifts mine | noLambdas mine = foldl (setObj OpenLift)
-                                    mine (objPos ClosedLift mine)
-                 | otherwise      = mine
+updateLifts mine = mine{grid = openLift <$> grid mine}
+
+openLift :: Obj -> Obj
+openLift ClosedLift = OpenLift
+openLift obj        = obj
 
 -- moves the rocks in the mine and also returns if it actually moved any
 moveRocks :: Mine -> (Mine, Bool)
@@ -107,7 +107,7 @@ moveRocks mine | not (any (isJust . fst) newOldPairs) = (mine  , False)
     maybeReplaceNew mine (Just new, _) = setObj Rock mine new
 
 setObj :: Obj -> Mine -> Pos -> Mine
-setObj obj mine pos = listArray (bounds mine) . map setObjCell . assocs $ mine
+setObj obj mine pos = mine{grid = listArray (bounds (grid mine)) . map setObjCell . assocs . grid $ mine}
     where setObjCell (pos', obj') | pos' == pos = obj
                                   | otherwise   = obj'
 
@@ -134,13 +134,10 @@ newRockPos mine pos
           right     = move pos Right
 
 noLambdas :: Mine -> Bool
-noLambdas = all (/= Lambda) . elems
+noLambdas = all (/= Lambda) . elems . grid
 
 mineSize :: Mine -> (Int, Int)
-mineSize = unPos . snd .  bounds
-
-findLambdas :: Mine -> [Pos]
-findLambdas = objPos Lambda
+mineSize = unPos . snd .  bounds . grid
 
 robotPos :: Mine -> Pos
 robotPos = head . objPos Robot
@@ -149,11 +146,9 @@ rockPos :: Mine -> [Pos]
 rockPos = objPos Rock
 
 objPos :: Obj -> Mine -> [Pos]
-objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . assocs
+objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . assocs . grid
 
 objAt :: Mine -> Pos -> Obj
-objAt = (!)
+objAt mine pos = grid mine ! pos
 
-locateLambdas :: Mine -> [Pos]
-locateLambdas = objPos Lambda
 

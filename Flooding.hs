@@ -11,5 +11,5 @@ defaultWaterproof = 10
 isUnderwater :: Pos -> Int -> Bool
 isUnderwater (Pos (x, y)) n = n >= y 
 
-floodMine :: Mine -> (Int, Int, Int) -> Mine
-floodMine mn = undefined
+waterRise :: (Int, Int, Int) -> (Int, Int, Int)
+waterRise (wtr, fld, wtrpf) = 

@@ -8,6 +8,8 @@
 {-- Module Imports                                                    -}
 {----------------------------------------------------------------------}
 
+Data.PQueue.Min requires 'cabal install pqueue'.
+
 > import Prelude hiding (Either(..))
 > import Control.Monad.State
 > import Data.List (sort)
@@ -27,25 +29,16 @@ details @ http://en.wikipedia.org/wiki/Taxicab_geometry
 > mdist :: Pos -> Pos -> Int
 > mdist (Pos (x,y)) (Pos (a,b)) = abs (x-a) + abs (y-b)
 
-Finds all the neighbours of a position. Note that this may
-include positions which are outside of the map limits.
+Finds the positions adjacent to a position. We remove illegal positions from this list.
 
-> neighbours :: Pos -> [Pos]
-> neighbours (Pos (1,1)) = map Pos [(2,1), (1,2)]
-> neighbours (Pos (x,1)) = map Pos [(x-1,1), (x+1,1), (x,2)]
-> neighbours (Pos (1,y)) = map Pos [(1,y-1), (1,y+1), (2,y)]
-> neighbours (Pos (x,y)) = map Pos [(x,y+1), (x+1,y), (x,y-1), (x-1,y)]
-
-Given the dimension of a map and a list of positions, this
-function removes all positions which are not actually on the map.
-
-> limit :: (Int, Int) -> [Pos] -> [Pos]
-> limit (n, m) ps = [Pos (x, y) | (Pos (x, y)) <- ps, not (n > x), not (m > y)]
-
-Finds the positions adjacent to a position.
+XXX: doesn't consider a robot pushing rocks
 
 > surroundings :: Mine -> Pos -> [Pos]
-> surroundings m p = limit (mineSize m) (neighbours p)
+> surroundings m p = map (move p) allowedCmds
+>    where allowedCmds = filter allowedCmd dirs
+>          allowedCmd cmd = not (isLosingMove newMine cmd) && isValidMove newMine cmd
+>          newMine = setRobotPos m p
+           
 
 > action :: Pos -> Pos -> Cmd
 > action (Pos (x,y)) (Pos (a,b)) 
@@ -61,12 +54,13 @@ Finds the positions adjacent to a position.
 A node in the search tree represent a position in the mine. We also
 store information about where we came from and what t
 
-g is the computed cost
+g is the cost of the path so far
 h is the heuristic value
 f is the result of g+h
 
 > data SearchNode = SN {
 >   previousNode :: Maybe SearchNode,
+>   nodeAction   :: Maybe Cmd,
 >   nodePos      :: Pos,
 >   nodeG        :: Int,
 >   nodeH        :: Int
@@ -83,13 +77,10 @@ We can order search nodes by their f value.
 >     compare x y = compare (nodeF x) (nodeF y)
 
 > nodeF :: SearchNode -> Int
-> nodeF (SN _ _ g h) = g + h
+> nodeF (SN _ _ _ g h) = g + h
 
 > isTarget :: SearchNode -> Pos -> Bool
 > isTarget n p = nodePos n == p
-
-> makeNode :: Maybe SearchNode -> Int -> Pos -> Pos -> SearchNode
-> makeNode n g t p = SN n p g (mdist p t)
 
 > data SearchState = SS {
 >   mine   :: Mine,
@@ -99,7 +90,9 @@ We can order search nodes by their f value.
 
 > initSearchState :: Mine -> Pos -> Pos -> SearchState
 > initSearchState m o p = SS m [] (PQ.singleton n)
->                         where n = makeNode Nothing 0 o p
+>                         where
+>                             h = mdist o p 
+>                             n = SN Nothing Nothing p 0 h
 
 > getMine :: AStar Mine
 > getMine = mine `fmap` get
@@ -110,38 +103,43 @@ We can order search nodes by their f value.
 > nextNode = (PQ.findMin . open) `fmap` get
 
 > addClosed :: SearchNode -> AStar ()
-> addClosed n = do 
->    s <- get
->    put $ s { closed = (nodePos n) : (closed s) }
+> addClosed n = modify $ \s -> s { closed = nodePos n : closed s } 
 
 > addOpen :: SearchNode -> AStar ()
-> addOpen n = do
->    s <- get
->    put $ s { open = PQ.insert n (open s)}
+> addOpen n = modify $ \s -> s { open = PQ.insert n (open s) } 
+
+> makeNode :: SearchNode -> Int -> Pos -> Pos -> SearchNode
+> makeNode n g o d = SN (Just n) (Just a) d g (mdist o d)
+>                    where
+>                        a = action (nodePos n) d
 
 > addOpens :: Pos -> Int -> SearchNode -> [Pos] -> AStar ()
-> addOpens o g p ps = mapM_ addOpen $ map (makeNode (Just p) g o) ps             
+> addOpens o g p ps = mapM_ addOpen $ map (makeNode p g o) ps       
 
 > followPath :: Maybe SearchNode -> Path -> Path
 > followPath (Just n) ps = constructPath n ps
 > followPath Nothing  ps = ps
 
-> constructPath :: SearchNode -> Path -> Path
-> constructPath (SN n p _ _) ps = followPath n (p : ps)
+p needs to be a Cmd
 
-> astar :: Pos -> Pos -> Int -> AStar Path
-> astar o t g = do
+> constructPath :: SearchNode -> Path -> Path
+> constructPath (SN n a _ _ _) ps = case a of
+>     (Just c) -> followPath n (c : ps)
+>     Nothing  -> ps
+
+> astar :: Pos -> Pos -> AStar Path
+> astar o t = do
 >   n <- nextNode
 >   if isTarget n t 
 >   then return $ constructPath n []
 >   else do
 >       addClosed n
 >       m <- getMine
->       addOpens o (g+1) n $ surroundings m (nodePos n) 
->       astar o t (g+1)
+>       addOpens o (nodeG n + 1) n $ surroundings m (nodePos n) 
+>       astar o t
 
 > path :: Mine -> Pos -> Pos -> Path
-> path m x y = evalState (astar x y 0) (initSearchState m x y)
+> path m x y = evalState (astar x y) (initSearchState m x y)
 
 {----------------------------------------------------------------------}
 {-- Main Search Algorithm                                             -}
@@ -160,7 +158,7 @@ If a step doesn't work because a rock is in the way or the player would get crus
 > findPaths m p ps = map (path m p) ps
 
 > search :: Mine -> [Path]
-> search m = simulatePaths m $ findPaths m (robotPos m) (findLambdas m)
+> search m = simulatePaths m $ findPaths m (robotPos m) (objPos Lambda m)
 
 I would like more information than just a Path (i.e. the # of lambdas collected).Currently we only consider the length.
 
