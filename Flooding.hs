@@ -4,6 +4,14 @@ module Flooding where
 import Core
 import Control.Monad.State
 
+{- ***defined in Core***
+data FloodingState = FloodingState
+    { waterLevel         :: Int
+    , floodingSpeed      :: Int
+    , waterProofing      :: Int
+    , stepsUntilNextRise :: Int
+    , waterProofingLeft  :: Int } -}
+
 defaultWater      = 0
 defaultFlooding   = 0
 defaultWaterproof = 10

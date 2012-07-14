@@ -18,6 +18,7 @@ Data.PQueue.Min requires 'cabal install pqueue'.
 > import qualified Data.PQueue.Min as PQ
 > import Mine
 > import Core
+> import Debug.Trace (trace)
 
 {----------------------------------------------------------------------}
 {-- Helper Functions                                                  -}
@@ -69,7 +70,7 @@ f is the result of g+h
 >   nodePos      :: Pos,
 >   nodeG        :: Int,
 >   nodeH        :: Int
-> }
+> } deriving Show
 
 Two nodes are considered equal if they have the same position.
 
@@ -97,21 +98,29 @@ We can order search nodes by their f value.
 > initSearchState m o p = SS m [] (PQ.singleton n)
 >                         where
 >                             h = mdist o p 
->                             n = SN Nothing Nothing p 0 h
+>                             n = SN Nothing Nothing o 0 h
 
 > getMine :: AStar Mine
 > getMine = mine `fmap` get
 
 > type AStar = State SearchState
 
+> query :: MonadState s m => (s -> s) -> m s
+> query f = get >>= \v -> put (f v) >> return v
+
 > nextNode :: AStar SearchNode
-> nextNode = (PQ.findMin . open) `fmap` get
+> nextNode =  do st <- get
+>                put $ st { open = PQ.deleteMin (open st)}
+>                return $ PQ.findMin (open st)
 
 > addClosed :: SearchNode -> AStar ()
 > addClosed n = modify $ \s -> s { closed = nodePos n : closed s } 
 
 > addOpen :: SearchNode -> AStar ()
-> addOpen n = modify $ \s -> s { open = PQ.insert n (open s) } 
+> addOpen n = do s <- get
+>                if nodePos n `elem` closed s
+>                then return ()
+>                else put $ s { open = PQ.insert n (open s) } 
 
 > makeNode :: SearchNode -> Int -> Pos -> Pos -> SearchNode
 > makeNode n g o d = SN (Just n) (Just a) d g (mdist o d)
@@ -141,10 +150,13 @@ p needs to be a Cmd
 >       addClosed n
 >       m <- getMine
 >       addOpens o (nodeG n + 1) n $ surroundings m (nodePos n) 
->       astar o t
+>       ol <- open `fmap` get
+>       if PQ.null ol 
+>       then return $ constructPath n [Abort]
+>       else astar o t
 
 > path :: Mine -> Pos -> Pos -> Path
-> path m x y = evalState (astar x y) (initSearchState m x y)
+> path m x y = let r = evalState (astar x y) (initSearchState m x y) in trace (showPath r) r
 
 {----------------------------------------------------------------------}
 {-- Main Search Algorithm                                             -}
@@ -153,13 +165,18 @@ p needs to be a Cmd
 If a step doesn't work because a rock is in the way or the player would get crushed, we need to run A* again
 
 > simulate :: Mine -> Path -> Path
-> simulate m []     = (choose . search) m
-> simulate m (x:xs) = x : simulate (updateMine x m) xs
+> simulate m []                       = (choose . search) m
+> simulate m (x:xs) | isValidMove m x = x : simulate (updateMine x m) xs
+>                   | otherwise       = (choose . search) m
 
 > simulatePaths :: Mine -> [Path] -> [Path]
 > simulatePaths m ps = map (simulate m) ps
 
+> findLambdaLift :: Mine -> Pos
+> findLambdaLift m = head (objPos OpenLift m)
+
 > findPaths :: Mine -> Pos -> [Pos] -> [Path]
+> findPaths m p [] = [path m p (findLambdaLift m)]
 > findPaths m p ps = map (path m p) ps
 
 > search :: Mine -> [Path]
