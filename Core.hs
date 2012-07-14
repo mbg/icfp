@@ -5,6 +5,7 @@ import Data.Array.IArray (Array)
 import Data.Ix
 import Data.Maybe (fromJust)
 import Data.Tuple (swap)
+import Debug.Trace (trace)
 
 data Obj = Robot
          | Wall

@@ -44,7 +44,7 @@ XXX: doesn't consider a robot pushing rocks
 >          inBounds = inRange (bounds (grid m)) . move p
            
 > nextPossibleStates :: Mine -> [Mine]
-> nextPossibleStates mn = undefined
+> nextPossibleStates mn = map (flip updateMine mn) ((filter . isValidMove) mn dirs)
 
 > action :: Pos -> Pos -> Cmd
 > action (Pos (x,y)) (Pos (a,b)) 
@@ -166,6 +166,7 @@ If a step doesn't work because a rock is in the way or the player would get crus
 
 > simulate :: Mine -> Path -> Path
 > simulate m []                       = (choose . search) m
+> simulate m (Abort:_)                = [Abort]
 > simulate m (x:xs) | isValidMove m x = x : simulate (updateMine x m) xs
 >                   | otherwise       = (choose . search) m
 

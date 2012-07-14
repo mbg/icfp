@@ -1,5 +1,6 @@
 import Control.Applicative ((<$>))
 import Prelude hiding (Either(..))
+import System.Environment (getArgs)
 import System.IO (getContents, stdin)
 
 import Mine
@@ -9,7 +10,7 @@ import Flooding
 
 -- I/O Stuff
 
-runTest :: String -> IO ()
+runTest :: FilePath -> IO ()
 runTest f = (readMine <$> readFile f) >>= putStrLn . run
 
 main :: IO ()
