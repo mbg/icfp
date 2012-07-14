@@ -132,10 +132,10 @@ p needs to be a Cmd
 >       addClosed n
 >       m <- getMine
 >       addOpens o (nodeG n + 1) n $ surroundings m (nodePos n) 
->       astar o t (nodeG n + 1)
+>       astar o t
 
 > path :: Mine -> Pos -> Pos -> Path
-> path m x y = evalState (astar x y 0) (initSearchState m x y)
+> path m x y = evalState (astar x y) (initSearchState m x y)
 
 {----------------------------------------------------------------------}
 {-- Main Search Algorithm                                             -}
