@@ -67,8 +67,7 @@ rockNeedsPushing mine cmd
         = False
     where robot = robotPos mine
 
--- if we move onto an open lift, we win: also provides the command to exit the mine
--- djm: why would we want to return the command that we just gave it?
+-- if we move onto an open lift, we win
 isWinningMove :: Mine -> Cmd -> Bool
 isWinningMove mine cmd = objAt mine (move (robotPos mine) cmd) == OpenLift
 
