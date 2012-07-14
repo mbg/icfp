@@ -16,6 +16,7 @@ data Obj = Robot
          | OpenLift
          | Earth
          | Empty
+         | Trampoline | Target   
          deriving (Eq, Ord, Enum, Show)
 
 data Mine = Mine 
@@ -79,7 +80,25 @@ charObjs =
     ,('L' , ClosedLift)
     ,('O' , OpenLift)
     ,('.' , Earth)
-    ,(' ' , Empty)]
+    ,(' ' , Empty)
+    ,('A' , Trampoline)
+    ,('B' , Trampoline)
+    ,('C' , Trampoline)
+    ,('D' , Trampoline)
+    ,('E' , Trampoline)
+    ,('F' , Trampoline)
+    ,('G' , Trampoline)
+    ,('H' , Trampoline)
+    ,('I' , Trampoline)
+    ,('1' , Target)
+    ,('2' , Target)
+    ,('3' , Target)
+    ,('4' , Target)
+    ,('5' , Target)
+    ,('6' , Target)
+    ,('7' , Target)
+    ,('8' , Target)
+    ,('9' , Target)]
 
 showCmd :: Cmd -> Char
 showCmd Left  = 'L'
