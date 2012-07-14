@@ -12,6 +12,8 @@ import Debug.Trace (trace)
 
 import Core
 import Flooding
+import Trampolines
+import Growths
 
 readMine :: String -> Mine
 readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) (reverse rows))
@@ -59,21 +61,6 @@ moveRobot cmd mn | valid && isTrampoline obj = let (Target c) = objAt mn jumpDes
           obj = objAt mn newRobot
           jumpDest' = jumpDest mn newRobot
           
-
-removeTrampolines :: [Char] -> Obj -> Obj
-removeTrampolines cs (Trampoline c') | c' `elem` cs = Empty
-removeTrampolines _ obj = obj
-
-toThisTarget :: Char -> Mine -> [Char]
--- given the letter for a target, find all trampoline letters that lead here
-toThisTarget c = map fst . filter ((== c) . snd) . trampolines
-
-jumpDest :: Mine -> Pos -> Pos
--- given the position of a trampoline, find its corresponding target
-jumpDest mine pos = head (objPos (Target . fromJust . lookup c . trampolines $ mine) mine)
-    where
-    (Trampoline c) = objAt mine pos
-
 isValidMove :: Mine -> Cmd -> Bool
 isValidMove mine cmd
     | not (inRange (bounds (grid mine)) (move robot cmd)) = False

@@ -18,6 +18,8 @@ data Obj = Robot
          | Empty
          | Trampoline Char
          | Target Char
+         | Beard  
+         | Razor  
          deriving (Eq, Ord, Show)
 
 isTrampoline :: Obj -> Bool
@@ -119,7 +121,9 @@ charObjs =
     ,('6' , Target '6')
     ,('7' , Target '7')
     ,('8' , Target '8')
-    ,('9' , Target '9')]
+    ,('9' , Target '9')
+    ,('W' , Beard)
+    ,('!' , Razor)]
 
 showCmd :: Cmd -> Char
 showCmd Left  = 'L'
