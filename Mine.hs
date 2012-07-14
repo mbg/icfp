@@ -72,9 +72,9 @@ isWinningMove mine cmd = objAt mine (move (robotPos mine) cmd) == OpenLift
 -- if we update the state and then have a rock above us
 -- that wasn't there before, we lose
 isLosingMove :: Mine -> Cmd -> Bool
-isLosingMove mine cmd | not (isWinningMove mine cmd)
-    = objAt mine' (move (robotPos mine') Up) == Rock &&
-      objAt mine  (move (robotPos mine') Up) /= Rock
+isLosingMove mine cmd =
+    objAt mine' (move (robotPos mine') Up) == Rock &&
+    objAt mine  (move (robotPos mine') Up) /= Rock
     where mine' = fst . moveRocks. moveRobot cmd $ mine
 
 updateMine :: Cmd -> Mine -> Mine
@@ -84,6 +84,9 @@ updateLifts :: Mine -> Mine
 updateLifts mine | noLambdas mine = foldl (setObj OpenLift)
                                     mine (objPos ClosedLift mine)
                  | otherwise      = mine
+openLift :: Obj -> Obj
+openLift ClosedList = OpenLift
+openLift obj        = obj
 
 -- moves the rocks in the mine and also returns if it actually moved any
 moveRocks :: Mine -> (Mine, Bool)
