@@ -1,7 +1,7 @@
 module Core where
 
 import Prelude hiding (Either(..))
-import Data.Array.IArray (Array)
+import Data.Array.IArray
 import Data.Ix
 import Data.Maybe (fromJust)
 import Data.Tuple (swap)
@@ -21,6 +21,20 @@ data Mine = Mine
     { grid     :: Array Pos Obj
     , flooding :: FloodingState }
 
+showMine :: Mine -> String
+showMine mine = unlines . reverse . splitAtEvery width . map toChar . elems . grid $ mine
+    where
+    splitAtEvery :: Int -> [a] -> [[a]]
+    splitAtEvery _ [] = []
+    splitAtEvery n xs = let (x,xs') = splitAt n xs in x : splitAtEvery n xs'
+    (width, _) = mineSize mine
+
+mineSize :: Mine -> (Int, Int)
+mineSize = unPos . snd .  bounds . grid
+
+instance Show Mine where
+   show = showMine
+
 newtype Pos = Pos {unPos :: (Int, Int)}
     deriving (Eq, Ord, Show)
 
@@ -32,11 +46,12 @@ data FloodingState = FloodingState
     , waterProofingLeft  :: Int }
 
 -- in order to get [(1,1), (2,1), (3,1), ...] order
-instance Ix Pos where
-    range (Pos pos1, Pos pos2)                   = map (Pos . swap) (range (pos1, pos2))
-    index (Pos (x1,y1), Pos (x2,y2)) (Pos (x,y)) = index ((y1,x1),(y2,x2)) (y,x)
-    inRange (Pos pos1, Pos pos2) (Pos x)         = inRange (pos1, pos2) x
 
+instance Ix Pos where
+    range (Pos (x1,y1), Pos (x2,y2)) = map Pos (range ((x1,y1),(x2,y2)))
+    index (Pos (x1,y1), Pos (x2,y2)) (Pos (x,y)) | inRange ((y1,x1),(y2,x2)) (y,x) = index ((y1,x1),(y2,x2)) (y,x)
+                                                 | otherwise = error $ "index out of bounds: " ++ show (x,y)
+    inRange (Pos (x1,y1), Pos (x2,y2)) (Pos (x,y))         = inRange ((y1,x1),(y2,x2)) (y,x)
 data Cmd = Left
          | Right
          | Up

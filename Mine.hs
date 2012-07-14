@@ -11,7 +11,7 @@ import Core
 --import Flooding
 
 readMine :: String -> Mine
-readMine str = Mine {grid = listArray (Pos (1,1), Pos (maxX, maxY)) (concatMap (pad maxX . map toObj) rows)}
+readMine str = trace "readMine done" $ Mine {grid = listArray (Pos (1,1), Pos (maxX, maxY)) (concatMap (pad maxX . map toObj) rows)}
     where
     rows = reverse (lines str)
     maxY = length rows
@@ -20,14 +20,6 @@ readMine str = Mine {grid = listArray (Pos (1,1), Pos (maxX, maxY)) (concatMap (
     pad n xs | len < n   = xs ++ replicate (n - len) Empty
              | otherwise = xs
         where len = length xs
-
-showMine :: Mine -> String
-showMine mine = unlines . reverse . splitAtEvery width . map toChar . elems . grid $ mine
-    where
-    splitAtEvery :: Int -> [a] -> [[a]]
-    splitAtEvery _ [] = []
-    splitAtEvery n xs = let (x,xs') = splitAt n xs in x : splitAtEvery n xs'
-    (width, _) = mineSize mine
 
 -- does NOT include the falling rocks, the main
 -- function will deal with this
@@ -113,9 +105,10 @@ moveRocks mine | not (any (isJust . fst) newOldPairs) = (mine  , False)
     maybeReplaceNew mine (Just new, _) = setObj Rock mine new
 
 setObj :: Obj -> Mine -> Pos -> Mine
-setObj obj mine pos = mine{grid = listArray (bounds (grid mine)) . map setObjCell . assocs . grid $ mine}
-    where setObjCell (pos', obj') | pos' == pos = obj
-                                  | otherwise   = obj'
+setObj obj mine pos = mine{grid = array bounds' [(ix, setObjCell ix obj) | ix <- range bounds', let obj = grid mine ! ix]}
+    where bounds' = bounds (grid mine)
+          setObjCell pos' obj' | pos' == pos = obj
+                               | otherwise   = obj'
 
 newRockPos :: Mine -> Pos -> Maybe Pos
 -- assumes that there is a rock at oldPos
@@ -142,9 +135,6 @@ newRockPos mine pos
 noLambdas :: Mine -> Bool
 noLambdas = all (/= Lambda) . elems . grid
 
-mineSize :: Mine -> (Int, Int)
-mineSize = unPos . snd .  bounds . grid
-
 robotPos :: Mine -> Pos
 robotPos = head . objPos Robot
 
@@ -155,4 +145,5 @@ objPos :: Obj -> Mine -> [Pos]
 objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . assocs . grid
 
 objAt :: Mine -> Pos -> Obj
-objAt mine pos = grid mine ! pos
+objAt mine pos | inRange (bounds (grid mine)) pos = grid mine ! pos
+               | otherwise = error $ "Index out of bounds: " ++ show pos
