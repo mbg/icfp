@@ -14,7 +14,7 @@ data Obj = Robot
          | OpenLift
          | Earth
          | Empty
-         deriving (Eq, Ord, Enum)
+         deriving (Eq, Ord, Enum, Show)
 
 type Mine = Array Pos Obj
 newtype Pos = Pos {unPos :: (Int, Int)}
@@ -32,7 +32,7 @@ data Cmd = Left
          | Down
          | Wait
          | Abort
-         deriving (Eq, Ord)
+         deriving (Eq, Ord, Show)
 
 type Path = [Cmd]
 
