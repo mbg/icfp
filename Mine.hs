@@ -150,6 +150,6 @@ objPos :: Obj -> Mine -> [Pos]
 objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . assocs . grid
 
 objAt :: Mine -> Pos -> Obj
-objAt mine pos = grid mine ! pos
+objAt mine pos = trace ("calling objAt" ++ show pos) (grid mine ! pos)
 
 
