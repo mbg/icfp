@@ -6,11 +6,7 @@ import Control.Monad.State
 import Mine
 import AStar
 import Core
-
--- loldicks
--- [[KeepCalmCurryOn]]
-
-   
+import Flooding
 
 -- I/O Stuff
 main :: IO ()

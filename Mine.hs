@@ -5,6 +5,7 @@ import Data.Tuple (swap)
 import Prelude hiding (Either(..))
 
 import Core
+import Flooding
 
 -- TODO: padding
 readMine :: String -> Mine
@@ -22,8 +23,7 @@ showMap mine = intersperseEvery '\n' width . map toChar . elems $ mine
     intersperseEvery = undefined
     (width, _) = mineSize mine
 
--- does NOT include the falling rocks, the main 
--- function will deal with this
+-- does NOT include the falling rocks, the main function will deal with this
 moveRobot :: Cmd -> Mine -> Mine
 moveRobot cmd mn | isValidMove   mn cmd && 
                    rockNeedsPushing mn cmd = let rPos = robotPos mn
@@ -54,9 +54,9 @@ rockNeedsPushing mine cmd
         = False
     where robot = robotPos mine
 
--- if we move onto an open lift, we win
-isWinningMove :: Cmd -> Mine -> Bool
-isWinningMove cmd mine = objAt mine (move (robotPos mine) cmd) == OpenLift
+-- if we move onto an open lift, we win: also provides the command to exit the mine
+isWinningMove :: Cmd -> Mine -> (Bool, Cmd)
+isWinningMove cmd mine = (objAt mine (move (robotPos mine) cmd) == OpenLift, cmd)
 
 -- if we update the state and then have a rock above us, we lose
 -- XXX: EXCEPT IF ROCK HASN'T MOVED
@@ -65,11 +65,8 @@ willThisMoveKillUs cmd mine | not (isWinningMove cmd mine)
     = objAt mine' (move (robotPos mine) Up) == Rock
     where mine' = moveRocks (moveRobot cmd mine)
 
-updateMine :: Cmd -> Mine -> Mine
-updateMine cmd = updateLifts . moveRocks . moveRobot cmd
-
-mineExited :: Mine -> Bool
-mineExited mn = let openLifts = objPos OpenLift in elem 
+updateMine :: Mine -> Mine
+updateMine = updateLifts . floodMine . moveRocks
 
 updateLifts :: Mine -> Mine
 -- XXX: slowish with lists
@@ -111,7 +108,6 @@ newRockPos mine pos
           left      = move pos Left
           right     = move pos Right
 
--- down with lambdas, up with lifting
 noLambdas :: Mine -> Bool
 noLambdas = all (/= Lambda) . elems
 
@@ -122,7 +118,6 @@ findLambdas :: Mine -> [Pos]
 findLambdas = objPos Lambda
 
 robotPos :: Mine -> Pos
--- XXX: if there is no robot, CRASH
 robotPos = head . objPos Robot
 
 rockPos :: Mine -> [Pos]
