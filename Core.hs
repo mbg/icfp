@@ -16,9 +16,19 @@ data Obj = Robot
          | Empty
          deriving (Eq, Ord, Enum)
 
-data Mine = Mine {grid :: Array Pos Obj}
+data Mine = Mine 
+    { grid     :: Array Pos Obj
+    , flooding :: FloodingState }
+
 newtype Pos = Pos {unPos :: (Int, Int)}
     deriving (Eq, Ord, Show)
+
+data FloodingState = FloodingState
+    { waterLevel         :: Int
+    , floodingSpeed      :: Int
+    , waterProofing      :: Int
+    , stepsUntilNextRise :: Int
+    , waterProofingLeft  :: Int }
 
 -- in order to get [(1,1), (2,1), (3,1), ...] order
 instance Ix Pos where
