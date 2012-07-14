@@ -16,15 +16,24 @@ data Obj = Robot
          | OpenLift
          | Earth
          | Empty
-         deriving (Eq, Ord, Enum, Show)
+         | Trampoline Char
+         | Target Char
+         deriving (Eq, Ord, Show)
+
+isTrampoline :: Obj -> Bool
+isTrampoline (Trampoline _) = True
+isTrampoline _ = False
 
 data Mine = Mine 
     { grid     :: Array Pos Obj
-    , flooding :: FloodingState }
+    , flooding :: FloodingState
+    , trampolines :: [(Char,Char)]}
 
 showMine :: Mine -> String
-showMine mine = unlines . reverse . splitAtEvery width . map toChar . elems . grid $ mine
+showMine mine = unlines (grid' ++ metaData)
     where
+    grid' = reverse . splitAtEvery width . map toChar . elems . grid $ mine
+    metaData = ["Flooding: " ++ show (flooding mine), "Trampolines: " ++ show (trampolines mine)]
     splitAtEvery :: Int -> [a] -> [[a]]
     splitAtEvery _ [] = []
     splitAtEvery n xs = let (x,xs') = splitAt n xs in x : splitAtEvery n xs'
@@ -45,6 +54,7 @@ data FloodingState = FloodingState
     , waterProofing      :: Int
     , stepsSinceLastRise :: Int
     , waterProofingLeft  :: Int }
+    deriving Show
 
 -- to get [(1,1), (2,1), (3,1), ...] order
 instance Ix Pos where
@@ -65,10 +75,14 @@ dirs = [Left, Right, Up, Down]
 type Path = [Cmd]
 
 toChar :: Obj -> Char
-toChar = fromJust . flip lookup (map swap charObjs)
+toChar (Trampoline char) = char
+toChar (Target char) = char
+toChar obj = fromJust . flip lookup (map swap charObjs) $ obj
 
 toObj :: Char -> Obj
-toObj = fromJust . flip lookup charObjs
+toObj char | char `elem` ['A'..'I'] = Trampoline char
+           | char `elem` ['1'..'9'] = Target char
+           | otherwise = fromJust . flip lookup charObjs $ char
 
 charObjs :: [(Char, Obj)]
 charObjs =

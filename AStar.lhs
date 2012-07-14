@@ -41,7 +41,8 @@ Finds the positions adjacent to a position. We remove illegal positions from thi
 >          newMine       = setRobotPos m p
            
 > nextPossibleStates :: Mine -> [Mine]
-> nextPossibleStates mn = map (flip updateMine mn) ((filter . isValidMove) mn dirs)
+> nextPossibleStates mn = map (flip updateMine mn) moves
+>     where moves = filter (\cmd -> isValidMove mn cmd && not (isLosingMove mn cmd)) dirs
 
 > action :: Pos -> Pos -> Cmd
 > action (Pos (x,y)) (Pos (a,b)) 
@@ -153,7 +154,7 @@ p needs to be a Cmd
 >       else astar o t
 
 > path :: Mine -> Pos -> Pos -> Path
-> path m x y = let r = evalState (astar x y) (initSearchState m x y) in trace (showPath r) r
+> path m x y = evalState (astar x y) (initSearchState m x y)
 
 {----------------------------------------------------------------------}
 {-- Main Search Algorithm                                             -}
@@ -187,7 +188,6 @@ If a step doesn't work because a rock is in the way or the player would get crus
 I would like more information than just a Path (i.e. the # of lambdas collected).Currently we only consider the length.
 
 > choose :: [Path] -> Path
-> choose ps | trace ("choose " ++ show (length ps)) False = undefined
 > choose [] = []
 > choose ps = snd . head $ sort [(length p,p) | p <- ps]
 

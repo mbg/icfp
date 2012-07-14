@@ -1,8 +1,9 @@
 module Mine where
 
-import Control.Applicative ((<$>))
+import Control.Applicative ((<$>), (<*>))
+import Control.Monad
 import Data.Array.IArray
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, catMaybes, fromMaybe)
 import Debug.Trace
 import Prelude hiding (Either(..))
 import Debug.Trace (trace)
@@ -12,10 +13,11 @@ import Flooding
 
 readMine :: String -> Mine
 readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) (reverse rows))
-                    , flooding = if null metaData then defaultFlooding else undefined}
+                    , flooding = parseFlooding metaData
+                    , trampolines = parseTrampolines metaData}
     where
     bounds = (Pos (1,1), Pos (maxX, maxY))
-    (rows, metaData) = break null (lines str)
+    (rows, "":metaData) = break null (lines str)
     maxY = length rows
     maxX = maximum (map length rows)
     pad :: Int -> [Obj] -> [Obj]
@@ -23,10 +25,28 @@ readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) 
              | otherwise = xs
         where len = length xs
 
+parseFlooding :: [String] -> FloodingState
+parseFlooding css = fromMaybe defaultFlooding (makeFloodingState <$> level' <*> flooding' <*> waterproof')
+    where level' = msum (map (\cs -> case cs of
+              'W':'a':'t':'e':'r':' ':cs' -> Just (read cs')
+              _ -> Nothing) css)
+          flooding' = msum (map (\cs -> case cs of
+              'F':'l':'o':'o':'d':'i':'n':'g':' ':cs' -> Just (read cs')
+              _ -> Nothing) css)
+          waterproof' = msum (map (\cs -> case cs of
+              'W':'a':'t':'e':'r':'p':'r':'o':'o':'f':' ':cs' -> Just (read cs')
+              _ -> Nothing) css)
+
+parseTrampolines :: [String] -> [(Char, Char)]
+parseTrampolines =  catMaybes . map (\cs -> case cs of
+    'T':'r':'a':'m':'p':'o':'l':'i':'n':'e':' ':tramp:' ':'t':'a':'r':'g':'e':'t':'s':' ':target:_ -> Just (tramp, target)
+    _ -> Nothing)
+
 -- does NOT include the falling rocks, the main
 -- function will deal with this
 moveRobot :: Cmd -> Mine -> Mine
-moveRobot cmd mn | valid && rockNeedsPushing mn cmd = moveObj (moveObj mn newRobot newRock) oldRobot newRobot -- move the rock then move the robot
+moveRobot cmd mn | valid && isTrampoline (objAt mn newRobot) = undefined -- Empty where robot was, Robot where target x is, Empty where all old trampoline x
+                 | valid && rockNeedsPushing mn cmd = moveObj (moveObj mn newRobot newRock) oldRobot newRobot -- move the rock then move the robot
                  | valid = moveObj mn oldRobot newRobot -- just move the robot
                  | otherwise          = mn
     where valid = isValidMove mn cmd
@@ -37,12 +57,13 @@ moveRobot cmd mn | valid && rockNeedsPushing mn cmd = moveObj (moveObj mn newRob
 isValidMove :: Mine -> Cmd -> Bool
 isValidMove mine cmd
     | not (inRange (bounds (grid mine)) (move robot cmd)) = False
-    | objAt mine (move robot cmd) `elem`
-     [Empty, Earth, Lambda, OpenLift]
+    | (obj `elem` [Empty, Earth, Lambda, OpenLift]) ||
+      isTrampoline obj
         = True
     | rockNeedsPushing mine cmd
         = True
     where robot = robotPos mine
+          obj = objAt mine (move robot cmd)
 isValidMove _ _ = False
 
 -- move an object from its old position to a new position and leave Empty behind
@@ -72,15 +93,16 @@ isWinningMove mine cmd = objAt mine (move (robotPos mine) cmd) == OpenLift
 -- that wasn't there before, we lose
 isLosingMove :: Mine -> Cmd -> Bool
 isLosingMove mine cmd =
-    objAt mine' (move (robotPos mine') Up) == Rock &&
-    objAt mine  (move (robotPos mine') Up) /= Rock
+    (objAt mine' (move (robotPos mine') Up) == Rock &&
+     objAt mine  (move (robotPos mine') Up) /= Rock) ||
+    (robotDrowned (updateEnv mine))
     where mine' = fst . moveRocks. moveRobot cmd $ mine
 
 updateEnv :: Mine -> Mine
 updateEnv = updateLifts . fst . moveRocks
 
 updateMine :: Cmd -> Mine -> Mine
-updateMine cmd = updateEnv . moveRobot cmd
+updateMine cmd = stepFloodingState . updateEnv . moveRobot cmd
 
 updateLifts :: Mine -> Mine
 updateLifts mine = mine{grid = openLift <$> grid mine}
