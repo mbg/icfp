@@ -3,7 +3,7 @@ module Mine where
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad
 import Data.Array.IArray
-import Data.Maybe (isJust, catMaybes, fromMaybe)
+import Data.Maybe (isJust, catMaybes, fromMaybe, fromJust)
 import Debug.Trace
 import Prelude hiding (Either(..))
 import Debug.Trace (trace)
@@ -45,14 +45,33 @@ parseTrampolines =  catMaybes . map (\cs -> case cs of
 -- does NOT include the falling rocks, the main
 -- function will deal with this
 moveRobot :: Cmd -> Mine -> Mine
-moveRobot cmd mn | valid && isTrampoline (objAt mn newRobot) = undefined -- Empty where robot was, Robot where target x is, Empty where all old trampoline x
-                 | valid && rockNeedsPushing mn cmd = moveObj (moveObj mn newRobot newRock) oldRobot newRobot -- move the rock then move the robot
-                 | valid = moveObj mn oldRobot newRobot -- just move the robot
+moveRobot cmd mn | valid && isTrampoline obj = let (Target c) = objAt mn jumpDest' in mapObjs (removeTrampolines (toThisTarget c mn)) (setRobotPos mn jumpDest')
+    -- Empty where robot was, Robot where target x is, Empty where all old trampoline x
+                 | valid && rockNeedsPushing mn cmd = moveObj (moveObj mn newRobot newRock) oldRobot newRobot
+    -- move the rock then move the robot
+                 | valid = moveObj mn oldRobot newRobot
+    -- just move the robot
                  | otherwise          = mn
     where valid = isValidMove mn cmd
           oldRobot = robotPos mn
           newRobot = move oldRobot cmd
           newRock  = move newRobot cmd
+          obj = objAt mn newRobot
+          jumpDest' = jumpDest mn newRobot
+
+removeTrampolines :: [Char] -> Obj -> Obj
+removeTrampolines cs (Trampoline c') | c' `elem` cs = Empty
+removeTrampolines _ obj = obj
+
+toThisTarget :: Char -> Mine -> [Char]
+-- given the letter for a target, find all trampoline letters that lead here
+toThisTarget c = map fst . filter ((== c) . snd) . trampolines
+
+jumpDest :: Mine -> Pos -> Pos
+-- given the position of a trampoline, find its corresponding target
+jumpDest mine pos = head (objPos (Target . fromJust . lookup c . trampolines $ mine) mine)
+    where
+    (Trampoline c) = objAt mine pos
 
 isValidMove :: Mine -> Cmd -> Bool
 isValidMove mine cmd
@@ -98,13 +117,13 @@ isLosingMove mine cmd =
     where mine' = fst . moveRocks. moveRobot cmd $ mine
 
 updateEnv :: Mine -> Mine
-updateEnv = updateLifts . fst . moveRocks
+updateEnv = mapObjs openLift . fst . moveRocks
 
 updateMine :: Cmd -> Mine -> Mine
 updateMine cmd = stepFloodingState . updateEnv . moveRobot cmd
 
-updateLifts :: Mine -> Mine
-updateLifts mine = mine{grid = openLift <$> grid mine}
+mapObjs :: (Obj -> Obj) -> Mine -> Mine
+mapObjs f mine = mine{grid = f <$> grid mine}
 
 openLift :: Obj -> Obj
 openLift ClosedLift = OpenLift
