@@ -66,7 +66,7 @@ isWinningMove cmd mine = (objAt mine (move (robotPos mine) cmd) == OpenLift, cmd
 -- if we update the state and then have a rock above us
 -- that wasn't there before, we lose
 isLosingMove :: Cmd -> Mine -> Bool
-isLosingMove cmd mine | not (isWinningMove cmd mine)
+isLosingMove cmd mine | not (fst (isWinningMove cmd mine)) -- mbg: added fst to make it type correct
     = objAt mine' (move (robotPos mine') Up) == Rock &&
       objAt mine  (move (robotPos mine') Up) /= Rock
     where mine' = fst . moveRocks. moveRobot cmd $ mine

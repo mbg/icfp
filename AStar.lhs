@@ -8,6 +8,8 @@
 {-- Module Imports                                                    -}
 {----------------------------------------------------------------------}
 
+Data.PQueue.Min requires 'cabal install pqueue'.
+
 > import Prelude hiding (Either(..))
 > import Control.Monad.State
 > import Data.List (sort)
@@ -67,6 +69,7 @@ f is the result of g+h
 
 > data SearchNode = SN {
 >   previousNode :: Maybe SearchNode,
+>   nodeAction   :: Maybe Cmd,
 >   nodePos      :: Pos,
 >   nodeG        :: Int,
 >   nodeH        :: Int
@@ -83,13 +86,10 @@ We can order search nodes by their f value.
 >     compare x y = compare (nodeF x) (nodeF y)
 
 > nodeF :: SearchNode -> Int
-> nodeF (SN _ _ g h) = g + h
+> nodeF (SN _ _ _ g h) = g + h
 
 > isTarget :: SearchNode -> Pos -> Bool
 > isTarget n p = nodePos n == p
-
-> makeNode :: Maybe SearchNode -> Int -> Pos -> Pos -> SearchNode
-> makeNode n g t p = SN n p g (mdist p t)
 
 > data SearchState = SS {
 >   mine   :: Mine,
@@ -99,7 +99,9 @@ We can order search nodes by their f value.
 
 > initSearchState :: Mine -> Pos -> Pos -> SearchState
 > initSearchState m o p = SS m [] (PQ.singleton n)
->                         where n = makeNode Nothing 0 o p
+>                         where
+>                             h = mdist o p 
+>                             n = SN Nothing Nothing p 0 h
 
 > getMine :: AStar Mine
 > getMine = mine `fmap` get
@@ -115,15 +117,24 @@ We can order search nodes by their f value.
 > addOpen :: SearchNode -> AStar ()
 > addOpen n = modify $ \s -> s { open = PQ.insert n (open s) } 
 
+> makeNode :: SearchNode -> Int -> Pos -> Pos -> SearchNode
+> makeNode n g o d = SN (Just n) (Just a) d g (mdist o d)
+>                    where
+>                        a = action (nodePos n) d
+
 > addOpens :: Pos -> Int -> SearchNode -> [Pos] -> AStar ()
-> addOpens o g p ps = mapM_ addOpen $ map (makeNode (Just p) g o) ps       
+> addOpens o g p ps = mapM_ addOpen $ map (makeNode p g o) ps       
 
 > followPath :: Maybe SearchNode -> Path -> Path
 > followPath (Just n) ps = constructPath n ps
 > followPath Nothing  ps = ps
 
+p needs to be a Cmd
+
 > constructPath :: SearchNode -> Path -> Path
-> constructPath (SN n p _ _) ps = followPath n (p : ps)
+> constructPath (SN n a _ _ _) ps = case a of
+>     (Just c) -> followPath n (c : ps)
+>     Nothing  -> ps
 
 > astar :: Pos -> Pos -> Int -> AStar Path
 > astar o t g = do
