@@ -5,7 +5,7 @@ import System.IO (getContents, stdin)
 import Mine
 import AStar
 import Core
---import Flooding
+import Flooding
 
 -- I/O Stuff
 
