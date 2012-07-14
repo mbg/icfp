@@ -81,7 +81,6 @@ We can order search nodes by their f value.
 > nodeF (SN _ _ _ g h) = g + h
 
 > isTarget :: SearchNode -> Pos -> Bool
-> isTarget n p | trace ("isTarget " ++ show n ++ " " ++ show p) False = undefined
 > isTarget n p = nodePos n == p
 
 > data SearchState = SS {
@@ -124,7 +123,6 @@ We can order search nodes by their f value.
 >                        a = action (nodePos n) d
 
 > addOpens :: Pos -> Int -> SearchNode -> [Pos] -> AStar ()
-> addOpens o g p ps | trace ("addOpens " ++ show ps) False = undefined
 > addOpens o g p ps = mapM_ addOpen $ map (makeNode p g o) ps       
 
 > followPath :: Maybe SearchNode -> Path -> Path
@@ -141,14 +139,14 @@ p needs to be a Cmd
 > astar :: Pos -> Pos -> AStar Path
 > astar o t = do
 >   n <- nextNode
->   if trace (show n) (isTarget n t) 
+>   if isTarget n t 
 >   then return $ constructPath n []
 >   else do
 >       addClosed n
 >       m <- getMine
 >       addOpens o (nodeG n + 1) n $ surroundings m (nodePos n) 
 >       ol <- open `fmap` get
->       trace (show ol) (astar o t)
+>       astar o t
 
 > path :: Mine -> Pos -> Pos -> Path
 > path m x y = let r = evalState (astar x y) (initSearchState m x y) in trace (showPath r) r
