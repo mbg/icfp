@@ -29,15 +29,13 @@ showMine mine = unlines . reverse . splitAtEvery width . map toChar . elems . gr
 -- does NOT include the falling rocks, the main
 -- function will deal with this
 moveRobot :: Cmd -> Mine -> Mine
-moveRobot cmd mn | isValidMove   mn cmd &&
-                   rockNeedsPushing mn cmd = let rPos = robotPos mn
-                                                 rnewPos = move rPos cmd
-                                                 rockPos = move rnewPos cmd in
-                         setObj Rock (setObj Robot (setObj Empty mn rPos) rnewPos) rockPos
-                 | isValidMove mn cmd = let rPos     = robotPos mn
-                                            rnewPos  = move rPos cmd in
-                         setObj Robot (setObj Empty mn rPos) rnewPos
+moveRobot cmd mn | valid && rockNeedsPushing mn cmd = moveObj (moveObj mn newRobot newRock) oldRobot newRobot -- move the rock then move the robot
+                 | valid = moveObj mn oldRobot newRobot -- just move the robot
                  | otherwise          = mn
+    where valid = isValidMove mn cmd
+          oldRobot = robotPos mn
+          newRobot = move oldRobot cmd
+          newRock  = move newRobot cmd
 
 isValidMove :: Mine -> Cmd -> Bool
 isValidMove mine cmd
@@ -48,6 +46,13 @@ isValidMove mine cmd
         = True
     where robot = robotPos mine
 isValidMove _ _ = False
+
+-- move an object from its old position to a new position and leave Empty behind
+moveObj :: Mine -> Pos -> Pos -> Mine
+moveObj mine old new = setObj (objAt mine old) (setObj Empty mine old) new
+
+setRobotPos :: Mine -> Pos -> Mine
+setRobotPos mine = moveObj mine (robotPos mine)
 
 rockNeedsPushing :: Mine -> Cmd -> Bool
 rockNeedsPushing mine cmd
@@ -60,13 +65,14 @@ rockNeedsPushing mine cmd
     where robot = robotPos mine
 
 -- if we move onto an open lift, we win: also provides the command to exit the mine
-isWinningMove :: Cmd -> Mine -> (Bool, Cmd)
-isWinningMove cmd mine = (objAt mine (move (robotPos mine) cmd) == OpenLift, cmd)
+-- djm: why would we want to return the command that we just gave it?
+isWinningMove :: Mine -> Cmd -> Bool
+isWinningMove mine cmd = objAt mine (move (robotPos mine) cmd) == OpenLift
 
 -- if we update the state and then have a rock above us
 -- that wasn't there before, we lose
-isLosingMove :: Cmd -> Mine -> Bool
-isLosingMove cmd mine | not (fst (isWinningMove cmd mine)) -- mbg: added fst to make it type correct
+isLosingMove :: Mine -> Cmd -> Bool
+isLosingMove mine cmd | not (isWinningMove mine cmd)
     = objAt mine' (move (robotPos mine') Up) == Rock &&
       objAt mine  (move (robotPos mine') Up) /= Rock
     where mine' = fst . moveRocks. moveRobot cmd $ mine

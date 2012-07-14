@@ -31,10 +31,14 @@ details @ http://en.wikipedia.org/wiki/Taxicab_geometry
 
 Finds the positions adjacent to a position. We remove illegal positions from this list.
 
+XXX: doesn't consider a robot pushing rocks
+
 > surroundings :: Mine -> Pos -> [Pos]
 > surroundings m p = map (move p) allowedCmds
 >    where allowedCmds = filter allowedCmd dirs
->          allowedCmd cmd = undefined
+>          allowedCmd cmd = not (isLosingMove newMine cmd) && isValidMove newMine cmd
+>          newMine = setRobotPos m p
+           
 
 > action :: Pos -> Pos -> Cmd
 > action (Pos (x,y)) (Pos (a,b)) 
@@ -154,7 +158,7 @@ If a step doesn't work because a rock is in the way or the player would get crus
 > findPaths m p ps = map (path m p) ps
 
 > search :: Mine -> [Path]
-> search m = simulatePaths m $ findPaths m (robotPos m) (findLambdas m)
+> search m = simulatePaths m $ findPaths m (robotPos m) (objPos Lambda m)
 
 I would like more information than just a Path (i.e. the # of lambdas collected).Currently we only consider the length.
 
