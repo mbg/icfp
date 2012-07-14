@@ -166,7 +166,8 @@ If a step doesn't work because a rock is in the way or the player would get crus
 
 > simulate :: Mine -> Path -> Path
 > simulate m []                       = (choose . search) m
-> simulate m (x:xs) | isValidMove m x = x : simulate (updateMine x m) xs
+> simulate m (x:xs) | x /= Abort && isValidMove m x 
+>                                     = x : simulate (updateMine x m) xs
 >                   | otherwise       = (choose . search) m
 
 > simulatePaths :: Mine -> [Path] -> [Path]

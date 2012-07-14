@@ -5,6 +5,7 @@ import Data.Array.IArray (Array)
 import Data.Ix
 import Data.Maybe (fromJust)
 import Data.Tuple (swap)
+import Debug.Trace (trace)
 
 data Obj = Robot
          | Wall
@@ -33,7 +34,7 @@ data FloodingState = FloodingState
 -- in order to get [(1,1), (2,1), (3,1), ...] order
 instance Ix Pos where
     range (Pos pos1, Pos pos2)                   = map (Pos . swap) (range (pos1, pos2))
-    index (Pos (x1,y1), Pos (x2,y2)) (Pos (x,y)) = index ((y1,x1),(y2,x2)) (y,x)
+    index (Pos (x1,y1), Pos (x2,y2)) (Pos (x,y)) = trace ("indexing: " ++ show (x,y)) (index ((y1,x1),(y2,x2)) (y,x))
     inRange (Pos pos1, Pos pos2) (Pos x)         = inRange (pos1, pos2) x
 
 data Cmd = Left

@@ -3,6 +3,7 @@ module Mine where
 import Control.Applicative ((<$>))
 import Data.Array.IArray
 import Data.Maybe (isJust)
+import Debug.Trace
 import Prelude hiding (Either(..))
 
 import Core
@@ -150,6 +151,6 @@ objPos :: Obj -> Mine -> [Pos]
 objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . assocs . grid
 
 objAt :: Mine -> Pos -> Obj
-objAt mine pos = trace ("calling objAt" ++ show pos) (grid mine ! pos)
+objAt mine pos = (grid mine ! trace ("calling objAt" ++ show pos) pos)
 
 
