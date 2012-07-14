@@ -35,6 +35,7 @@ moveRobot cmd mn | valid && rockNeedsPushing mn cmd = moveObj (moveObj mn newRob
 
 isValidMove :: Mine -> Cmd -> Bool
 isValidMove mine cmd
+    | not (inRange (bounds (grid mine)) (move robot cmd)) = False
     | objAt mine (move robot cmd) `elem`
      [Empty, Earth, Lambda, OpenLift]
         = True

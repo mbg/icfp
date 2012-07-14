@@ -9,15 +9,19 @@ data FloodingState = FloodingState
     { waterLevel         :: Int
     , floodingSpeed      :: Int
     , waterProofing      :: Int
-    , stepsUntilNextRise :: Int
+    , stepsSinceLastRise :: Int
     , waterProofingLeft  :: Int } -}
 
 defaultWater      = 0
 defaultFlooding   = 0
 defaultWaterproof = 10
 
-isUnderwater :: Pos -> Int -> Bool
-isUnderwater (Pos (x, y)) n = n >= y 
+isUnderwater :: Mine -> Pos -> Bool
+isUnderwater mine (Pos (x, y)) = waterLevel (flooding mine) >= y 
 
-waterRise :: (Int, Int, Int) -> (Int, Int, Int)
-waterRise (wtr, fld, wtrpf) = undefined
+stepFloodingState :: FloodingState -> FloodingState
+stepFloodingState flooding
+    | floodingSpeed flooding == 0 = flooding
+    | rised                       = flooding{waterLevel = waterLevel flooding + 1, stepsSinceLastRise = 1}
+    | otherwise                   = flooding{stepsSinceLastRise = stepsSinceLastRise flooding + 1}
+    where rised = stepsSinceLastRise flooding == floodingSpeed flooding

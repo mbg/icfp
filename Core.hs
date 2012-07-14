@@ -43,7 +43,7 @@ data FloodingState = FloodingState
     { waterLevel         :: Int
     , floodingSpeed      :: Int
     , waterProofing      :: Int
-    , stepsUntilNextRise :: Int
+    , stepsSinceLastRise :: Int
     , waterProofingLeft  :: Int }
 
 -- to get [(1,1), (2,1), (3,1), ...] order
