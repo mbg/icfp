@@ -8,7 +8,9 @@
 {-- Module Imports                                                    -}
 {----------------------------------------------------------------------}
 
+> import Control.Monad.State
 > import Data.List (sort)
+> import qualified Data.PQueue.Min as PQ
 > import Mine
 > import Core
 
@@ -46,12 +48,59 @@ Finds the positions adjacent to a position.
 {-- A* Search                                                         -}
 {----------------------------------------------------------------------} 
 
-> astar :: Mine -> [Pos] -> Pos -> [Pos] -> Path -> Path
-> astar _ (x:_)  y _ _ | x == y = []
-> astar m (x:xs) y c p          = surroundings m x
+A node in the search tree represent a position in the mine. We also
+store information about where we came from and what t
+
+g is the computed cost
+h is the heuristic value
+f is the result of g+h
+
+> data SearchNode = SN {
+>   previousNode :: Maybe SearchNode,
+>   nodePos      :: Pos,
+>   nodeG        :: Int,
+>   nodeH        :: Int
+> }
+
+> nodeF :: SearchNode -> Int
+> nodeF (SN _ _ g h) = g + h
+
+> isTarget :: SearchNode -> Pos -> Bool
+> isTarget n p = nodePos n == p
+
+> makeNode :: Maybe SearchNode -> Pos -> Int -> Pos -> SearchNode
+> makeNode n p g c = SN n p g (mdist p c)
+
+> data SearchState = SS {
+>   mine   :: Mine,
+>   closed :: [Pos],
+>   open   :: PQ.MinQueue SearchNode
+> }
+
+> initSearchState :: Mine -> Pos -> Pos -> SearchState
+> initSearchState m o p = SS m [] (PQ.singleton n)
+>                         where n = makeNode Nothing p 0 o
+
+> type AStar = State SearchState
+
+> nextNode :: AStar SearchNode
+> nextNode = (PQ.findMin . open) `fmap` get
+
+> followPath :: Maybe SearchNode -> Path -> Path
+> followPath (Just n) ps = constructPath n ps
+> followPath Nothing  ps = ps
+
+> constructPath :: SearchNode -> Path -> Path
+> constructPath (SN n p _ _) ps = followPath n (p : ps)
+
+> astar :: Pos -> AStar Path
+> astar t = do
+>   n <- nextNode
+>   if isTarget n t then return []
+>   else return []
 
 > path :: Mine -> Pos -> Pos -> Path
-> path m x y = astar m [x] y [] []
+> path m x y = evalState (astar y) (initSearchState m x y)
 
 {----------------------------------------------------------------------}
 {-- Main Search Algorithm                                             -}
@@ -70,12 +119,12 @@ If a step doesn't work because a rock is in the way or the player would get crus
 > findPaths m p ps = map (path m p) ps
 
 > search :: Mine -> [Path]
-> search m = simulate m $ findPaths m (robotPos m) (findLambdas m)
+> search m = simulatePaths m $ findPaths m (robotPos m) (findLambdas m)
 
 I would like more information than just a Path (i.e. the # of lambdas collected).Currently we only consider the length.
 
 > choose :: [Path] -> Path
-> choose ps = head $ sort [(length p,p) | p <- ps]
+> choose ps = snd . head $ sort [(length p,p) | p <- ps]
 
 > run :: Mine -> String
 > run = showPath . choose . search
