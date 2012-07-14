@@ -11,9 +11,10 @@ import Core
 --import Flooding
 
 readMine :: String -> Mine
-readMine str = trace "readMine done" $ Mine {grid = listArray (Pos (1,1), Pos (maxX, maxY)) (concatMap (pad maxX . map toObj) rows)}
+readMine str = Mine {grid = listArray bounds (concatMap (pad maxX . map toObj) (reverse rows))}
     where
-    rows = reverse (lines str)
+    bounds = (Pos (1,1), Pos (maxX, maxY))
+    (rows, metaData) = break null (lines str)
     maxY = length rows
     maxX = maximum (map length rows)
     pad :: Int -> [Obj] -> [Obj]
