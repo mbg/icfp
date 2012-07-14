@@ -1,54 +1,63 @@
 module Mine where
 
 import Data.Array.IArray
-import Data.Tuple (swap)
+import Data.Maybe (isJust)
 import Prelude hiding (Either(..))
 
 import Core
 import Flooding
 
--- TODO: padding
 readMine :: String -> Mine
-readMine str = listArray (Pos (1,1), Pos (maxX, maxY)) (concat (pad maxX (map (map toObj) rows)))
-    where rows = lines str
-          maxY = length rows
-          maxX = maximum (map length rows)
-          pad :: Int -> [a] -> [a]
-          pad = undefined
-
-showMap :: Mine -> String
-showMap mine = intersperseEvery '\n' width . map toChar . elems $ mine
+readMine str = listArray (Pos (1,1), Pos (maxX, maxY)) (concatMap (pad maxX . map toObj) rows)
     where
-    intersperseEvery :: a -> Int -> [a] -> [a]
-    intersperseEvery = undefined
+    rows = reverse (lines str)
+    maxY = length rows
+    maxX = maximum (map length rows)
+    pad :: Int -> [Obj] -> [Obj]
+    pad n xs | len < n   = xs ++ replicate (n - len) Empty
+             | otherwise = xs
+        where len = length xs
+
+showMine :: Mine -> String
+showMine mine = unlines . reverse . splitAtEvery width . map toChar . elems $ mine
+    where
+    splitAtEvery :: Int -> [a] -> [[a]]
+    splitAtEvery _ [] = []
+    splitAtEvery n xs = let (x,xs') = splitAt n xs in x : splitAtEvery n xs'
     (width, _) = mineSize mine
 
+<<<<<<< HEAD
 -- does NOT include the falling rocks, the main function will deal with this
+=======
+-- does NOT include the falling rocks, the main
+-- function will deal with this
+>>>>>>> dca58b65fe307a07d309ef80478f8de2545d30d6
 moveRobot :: Cmd -> Mine -> Mine
-moveRobot cmd mn | isValidMove   mn cmd && 
+moveRobot cmd mn | isValidMove   mn cmd &&
                    rockNeedsPushing mn cmd = let rPos = robotPos mn
-                                                 rnewPos = move rPos cmd 
+                                                 rnewPos = move rPos cmd
                                                  rockPos = move rnewPos cmd in
                          setObj Rock (setObj Robot (setObj Empty mn rPos) rnewPos) rockPos
                  | isValidMove mn cmd = let rPos     = robotPos mn
                                             rnewPos  = move rPos cmd in
-                         setObj Robot (setObj Empty mn rPos) rnewPos 
-                 | otherwise          = mn 
+                         setObj Robot (setObj Empty mn rPos) rnewPos
+                 | otherwise          = mn
 
 isValidMove :: Mine -> Cmd -> Bool
-isValidMove mine cmd | objAt mine (move robot cmd) `elem` 
-                       [Empty, Earth, Lambda, OpenLift] 
-                          = True
-                     | rockNeedsPushing mine cmd
-                          = True
-                       where robot = robotPos mine
+isValidMove mine cmd
+    | objAt mine (move robot cmd) `elem`
+     [Empty, Earth, Lambda, OpenLift]
+        = True
+    | rockNeedsPushing mine cmd
+        = True
+    where robot = robotPos mine
 isValidMove _ _ = False
 
 rockNeedsPushing :: Mine -> Cmd -> Bool
 rockNeedsPushing mine cmd
-    | cmd `elem` [Left, Right] && 
-      objAt mine (move robot cmd) == Rock && 
-      objAt mine (move (move robot cmd) cmd) == Empty 
+    | cmd `elem` [Left, Right] &&
+      objAt mine (move robot cmd) == Rock &&
+      objAt mine (move (move robot cmd) cmd) == Empty
         = True
     | otherwise
         = False
@@ -58,49 +67,65 @@ rockNeedsPushing mine cmd
 isWinningMove :: Cmd -> Mine -> (Bool, Cmd)
 isWinningMove cmd mine = (objAt mine (move (robotPos mine) cmd) == OpenLift, cmd)
 
--- if we update the state and then have a rock above us, we lose
--- XXX: EXCEPT IF ROCK HASN'T MOVED
-willThisMoveKillUs :: Cmd -> Mine -> Bool
-willThisMoveKillUs cmd mine | not (isWinningMove cmd mine)
-    = objAt mine' (move (robotPos mine) Up) == Rock
-    where mine' = moveRocks (moveRobot cmd mine)
+-- if we update the state and then have a rock above us
+-- that wasn't there before, we lose
+isLosingMove :: Cmd -> Mine -> Bool
+isLosingMove cmd mine | not (isWinningMove cmd mine)
+    = objAt mine' (move (robotPos mine') Up) == Rock &&
+      objAt mine  (move (robotPos mine') Up) /= Rock
+    where mine' = fst . moveRocks. moveRobot cmd $ mine
 
+<<<<<<< HEAD
 updateMine :: Mine -> Mine
 updateMine = updateLifts . floodMine . moveRocks
+=======
+updateMine :: Cmd -> Mine -> Mine
+updateMine cmd = updateLifts . fst . moveRocks . moveRobot cmd
+>>>>>>> dca58b65fe307a07d309ef80478f8de2545d30d6
 
 updateLifts :: Mine -> Mine
--- XXX: slowish with lists
-updateLifts mine | noLambdas mine = foldl (setObj OpenLift) 
+updateLifts mine | noLambdas mine = foldl (setObj OpenLift)
                                     mine (objPos ClosedLift mine)
                  | otherwise      = mine
 
-moveRocks :: Mine -> Mine
---- XXX: slowish with lists
-moveRocks mine = foldl (setObj Rock) mine newRocks
+-- moves the rocks in the mine and also returns if it actually moved any
+moveRocks :: Mine -> (Mine, Bool)
+moveRocks mine | not (any (isJust . fst) newOldPairs) = (mine  , False)
+               | otherwise                            = (mine'', True )
     where
-    oldRocks = rockPos mine
-    newRocks = map (newRockPos mine) oldRocks
-    mine'    = foldl (setObj Empty) mine oldRocks
+    newOldPairs :: [(Maybe Pos, Pos)]
+    newOldPairs  = map (\pos -> (newRockPos mine pos, pos)) (rockPos mine)
+    mine'        = foldl maybeEmptyOld mine  newOldPairs
+    mine''       = foldl maybeReplaceNew mine' newOldPairs
+
+    maybeEmptyOld :: Mine -> (Maybe Pos, Pos) -> Mine
+    maybeEmptyOld mine (Nothing, _  )   = mine
+    maybeEmptyOld mine (Just _ , old)   = setObj Empty mine old
+
+    maybeReplaceNew :: Mine -> (Maybe Pos, Pos) -> Mine
+    maybeReplaceNew mine (Nothing , _) = mine
+    maybeReplaceNew mine (Just new, _) = setObj Rock mine new
 
 setObj :: Obj -> Mine -> Pos -> Mine
 setObj obj mine pos = listArray (bounds mine) . map setObjCell . assocs $ mine
     where setObjCell (pos', obj') | pos' == pos = obj
                                   | otherwise   = obj'
 
-newRockPos :: Mine -> Pos -> Pos
+newRockPos :: Mine -> Pos -> Maybe Pos
 -- assumes that there is a rock at oldPos
+-- if the rock doesn't move, return Nothing
 newRockPos mine pos
-    | objAt' down      == Empty = down
+    | objAt' down      == Empty = Just down
     | objAt' down      == Rock &&
       objAt' right     == Empty &&
-      objAt' downRight == Empty = downRight
+      objAt' downRight == Empty = Just downRight
     | objAt' down      == Rock &&
       objAt' left      == Empty &&
-      objAt' downLeft  == Empty = downLeft
+      objAt' downLeft  == Empty = Just downLeft
     | objAt' down      == Lambda &&
       objAt' right     == Empty &&
-      objAt' downRight == Empty = downRight
-    | otherwise                 = pos
+      objAt' downRight == Empty = Just downRight
+    | otherwise                 = Nothing
     where objAt'    = objAt mine
           down      = move pos Down
           downLeft  = move (move pos Down) Left
@@ -131,6 +156,4 @@ objAt = (!)
 
 locateLambdas :: Mine -> [Pos]
 locateLambdas = objPos Lambda
-
-
 
