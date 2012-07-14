@@ -16,7 +16,7 @@ data Obj = Robot
          | Empty
          deriving (Eq, Ord, Enum)
 
-type Mine = Array Pos Obj
+data Mine = Mine {grid :: Array Pos Obj}
 newtype Pos = Pos {unPos :: (Int, Int)}
     deriving (Eq, Ord, Show)
 
@@ -34,6 +34,9 @@ data Cmd = Left
          | Abort
          deriving (Eq, Ord)
 
+dirs :: [Cmd]
+dirs = [Left, Right, Up, Down]
+
 type Path = [Cmd]
 
 toChar :: Obj -> Char
@@ -43,14 +46,15 @@ toObj :: Char -> Obj
 toObj = fromJust . flip lookup charObjs
 
 charObjs :: [(Char, Obj)]
-charObjs = [('R' , Robot)
-         ,('#' , Wall)
-         ,('*' , Rock)
-         ,('\\', Lambda)
-         ,('L' , ClosedLift)
-         ,('O' , OpenLift)
-         ,('.' , Earth)
-         ,(' ' , Empty)]
+charObjs =
+    [('R' , Robot)
+    ,('#' , Wall)
+    ,('*' , Rock)
+    ,('\\', Lambda)
+    ,('L' , ClosedLift)
+    ,('O' , OpenLift)
+    ,('.' , Earth)
+    ,(' ' , Empty)]
 
 showCmd :: Cmd -> Char
 showCmd Left  = 'L'

@@ -29,25 +29,12 @@ details @ http://en.wikipedia.org/wiki/Taxicab_geometry
 > mdist :: Pos -> Pos -> Int
 > mdist (Pos (x,y)) (Pos (a,b)) = abs (x-a) + abs (y-b)
 
-Finds all the neighbours of a position. Note that this may
-include positions which are outside of the map limits.
-
-> neighbours :: Pos -> [Pos]
-> neighbours (Pos (1,1)) = map Pos [(2,1), (1,2)]
-> neighbours (Pos (x,1)) = map Pos [(x-1,1), (x+1,1), (x,2)]
-> neighbours (Pos (1,y)) = map Pos [(1,y-1), (1,y+1), (2,y)]
-> neighbours (Pos (x,y)) = map Pos [(x,y+1), (x+1,y), (x,y-1), (x-1,y)]
-
-Given the dimension of a map and a list of positions, this
-function removes all positions which are not actually on the map.
-
-> limit :: (Int, Int) -> [Pos] -> [Pos]
-> limit (n, m) ps = [Pos (x, y) | (Pos (x, y)) <- ps, not (n > x), not (m > y)]
-
-Finds the positions adjacent to a position. We need to remove illegal positions from this list.
+Finds the positions adjacent to a position. We remove illegal positions from this list.
 
 > surroundings :: Mine -> Pos -> [Pos]
-> surroundings m p = limit (mineSize m) (neighbours p)
+> surroundings m p = map (move p) allowedCmds
+>    where allowedCmds = filter allowedCmd dirs
+>          allowedCmd cmd = undefined
 
 > action :: Pos -> Pos -> Cmd
 > action (Pos (x,y)) (Pos (a,b)) 

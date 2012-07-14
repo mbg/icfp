@@ -5,10 +5,10 @@ import Data.Maybe (isJust)
 import Prelude hiding (Either(..))
 
 import Core
-import Flooding
+--import Flooding
 
 readMine :: String -> Mine
-readMine str = listArray (Pos (1,1), Pos (maxX, maxY)) (concatMap (pad maxX . map toObj) rows)
+readMine str = Mine {grid = listArray (Pos (1,1), Pos (maxX, maxY)) (concatMap (pad maxX . map toObj) rows)}
     where
     rows = reverse (lines str)
     maxY = length rows
@@ -19,7 +19,7 @@ readMine str = listArray (Pos (1,1), Pos (maxX, maxY)) (concatMap (pad maxX . ma
         where len = length xs
 
 showMine :: Mine -> String
-showMine mine = unlines . reverse . splitAtEvery width . map toChar . elems $ mine
+showMine mine = unlines . reverse . splitAtEvery width . map toChar . elems . grid $ mine
     where
     splitAtEvery :: Int -> [a] -> [[a]]
     splitAtEvery _ [] = []
@@ -98,7 +98,7 @@ moveRocks mine | not (any (isJust . fst) newOldPairs) = (mine  , False)
     maybeReplaceNew mine (Just new, _) = setObj Rock mine new
 
 setObj :: Obj -> Mine -> Pos -> Mine
-setObj obj mine pos = listArray (bounds mine) . map setObjCell . assocs $ mine
+setObj obj mine pos = mine{grid = listArray (bounds (grid mine)) . map setObjCell . assocs . grid $ mine}
     where setObjCell (pos', obj') | pos' == pos = obj
                                   | otherwise   = obj'
 
@@ -125,13 +125,10 @@ newRockPos mine pos
           right     = move pos Right
 
 noLambdas :: Mine -> Bool
-noLambdas = all (/= Lambda) . elems
+noLambdas = all (/= Lambda) . elems . grid
 
 mineSize :: Mine -> (Int, Int)
-mineSize = unPos . snd .  bounds
-
-findLambdas :: Mine -> [Pos]
-findLambdas = objPos Lambda
+mineSize = unPos . snd .  bounds . grid
 
 robotPos :: Mine -> Pos
 robotPos = head . objPos Robot
@@ -140,11 +137,9 @@ rockPos :: Mine -> [Pos]
 rockPos = objPos Rock
 
 objPos :: Obj -> Mine -> [Pos]
-objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . assocs
+objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . assocs . grid
 
 objAt :: Mine -> Pos -> Obj
-objAt = (!)
+objAt mine pos = grid mine ! pos
 
-locateLambdas :: Mine -> [Pos]
-locateLambdas = objPos Lambda
 
