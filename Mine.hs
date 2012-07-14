@@ -105,10 +105,10 @@ moveRocks mine | not (any (isJust . fst) newOldPairs) = (mine  , False)
     maybeReplaceNew mine (Just new, _) = setObj Rock mine new
 
 setObj :: Obj -> Mine -> Pos -> Mine
-setObj obj mine pos = mine{grid = array bounds' [(ix, setObjCell ix obj) | ix <- range bounds', let obj = grid mine ! ix]}
+setObj obj mine pos = mine{grid = array bounds' . map setObjCell . assocs $ (grid mine)}
     where bounds' = bounds (grid mine)
-          setObjCell pos' obj' | pos' == pos = obj
-                               | otherwise   = obj'
+          setObjCell (pos',obj') | pos' == pos = (pos',obj)
+                                 | otherwise   = (pos',obj')
 
 newRockPos :: Mine -> Pos -> Maybe Pos
 -- assumes that there is a rock at oldPos
