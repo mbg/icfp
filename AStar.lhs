@@ -65,7 +65,7 @@ f is the result of g+h
 > data SearchNode = SN {
 >   previousNode :: Maybe SearchNode,
 >   nodeAction   :: Maybe Cmd,
->   nodePos      :: Pos,
+>   nodePos      :: !Pos,
 >   nodeG        :: {-# UNPACK #-} !Int,
 >   nodeH        :: {-# UNPACK #-} !Int
 > } deriving Show

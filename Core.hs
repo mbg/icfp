@@ -16,8 +16,8 @@ data Obj = Robot
          | OpenLift
          | Earth
          | Empty
-         | Trampoline Char
-         | Target Char
+         | Trampoline {-# UNPACK #-} !Char
+         | Target     {-# UNPACK #-} !Char
          | Beard  
          | Razor  
          deriving (Eq, Ord, Show)
@@ -54,12 +54,20 @@ data Pos = Pos {-# UNPACK #-} !Int
 
 unPos (Pos x y) = (x, y)
 
+
+
 data FloodingState = FloodingState
     { waterLevel         :: {-# UNPACK #-} !Int
     , floodingSpeed      :: {-# UNPACK #-} !Int
     , waterProofing      :: {-# UNPACK #-} !Int
     , stepsSinceLastRise :: {-# UNPACK #-} !Int
     , waterProofingLeft  :: {-# UNPACK #-} !Int }
+    deriving Show
+
+data BeardGrowth = BeardGrowth 
+    { numberRazors       :: {-# UNPACK #-} !Int 
+    , beardGrowthRate    :: {-# UNPACK #-} !Int 
+    , stepsSinceGrowth   :: {-# UNPACK #-} !Int } 
     deriving Show
 
 -- to get [(1,1), (2,1), (3,1), ...] order
@@ -77,6 +85,7 @@ data Cmd = Left
          | Down
          | Wait
          | Abort
+         | Cut -- w/ Hutton's Razor 
          deriving (Eq, Ord, Show)
 
 dirs :: [Cmd]
@@ -132,6 +141,7 @@ showCmd Up    = 'U'
 showCmd Down  = 'D'
 showCmd Wait  = 'W'
 showCmd Abort = 'A'
+showCmd Cut   = 'S'
 
 showPath :: Path -> String
 showPath = map showCmd
