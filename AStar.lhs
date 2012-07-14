@@ -44,7 +44,7 @@ function removes all positions which are not actually on the map.
 > limit :: (Int, Int) -> [Pos] -> [Pos]
 > limit (n, m) ps = [Pos (x, y) | (Pos (x, y)) <- ps, not (n > x), not (m > y)]
 
-Finds the positions adjacent to a position.
+Finds the positions adjacent to a position. We need to remove illegal positions from this list.
 
 > surroundings :: Mine -> Pos -> [Pos]
 > surroundings m p = limit (mineSize m) (neighbours p)
@@ -63,7 +63,7 @@ Finds the positions adjacent to a position.
 A node in the search tree represent a position in the mine. We also
 store information about where we came from and what t
 
-g is the computed cost
+g is the cost of the path so far
 h is the heuristic value
 f is the result of g+h
 
@@ -136,16 +136,16 @@ p needs to be a Cmd
 >     (Just c) -> followPath n (c : ps)
 >     Nothing  -> ps
 
-> astar :: Pos -> Pos -> Int -> AStar Path
-> astar o t g = do
+> astar :: Pos -> Pos -> AStar Path
+> astar o t = do
 >   n <- nextNode
 >   if isTarget n t 
 >   then return $ constructPath n []
 >   else do
 >       addClosed n
 >       m <- getMine
->       addOpens o (g+1) n $ surroundings m (nodePos n) 
->       astar o t (g+1)
+>       addOpens o (nodeG n + 1) n $ surroundings m (nodePos n) 
+>       astar o t (nodeG n + 1)
 
 > path :: Mine -> Pos -> Pos -> Path
 > path m x y = evalState (astar x y 0) (initSearchState m x y)
