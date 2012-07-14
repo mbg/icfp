@@ -5,6 +5,7 @@ import Data.Array.IArray
 import Data.Maybe (isJust)
 import Debug.Trace
 import Prelude hiding (Either(..))
+import Debug.Trace (trace)
 
 import Core
 --import Flooding
@@ -80,8 +81,11 @@ isLosingMove mine cmd =
     objAt mine  (move (robotPos mine') Up) /= Rock
     where mine' = fst . moveRocks. moveRobot cmd $ mine
 
+updateEnv :: Mine -> Mine
+updateEnv = updateLifts . fst . moveRocks
+
 updateMine :: Cmd -> Mine -> Mine
-updateMine cmd = updateLifts . fst . moveRocks . moveRobot cmd
+updateMine cmd = updateEnv . moveRobot cmd
 
 updateLifts :: Mine -> Mine
 updateLifts mine = mine{grid = openLift <$> grid mine}
@@ -152,5 +156,4 @@ objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . assocs . grid
 
 objAt :: Mine -> Pos -> Obj
 objAt mine pos = (grid mine ! trace ("calling objAt" ++ show pos) pos)
-
 

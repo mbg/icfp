@@ -44,7 +44,7 @@ XXX: doesn't consider a robot pushing rocks
 >          inBounds = inRange (bounds (grid m)) . move p
            
 > nextPossibleStates :: Mine -> [Mine]
-> nextPossibleStates mn = map (flip moveRobot mn) ((filter . isValidMove) mn dirs)
+> nextPossibleStates mn = map (flip updateMine mn) ((filter . isValidMove) mn dirs)
 
 > action :: Pos -> Pos -> Cmd
 > action (Pos (x,y)) (Pos (a,b)) 
