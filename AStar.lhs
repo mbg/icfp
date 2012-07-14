@@ -19,6 +19,8 @@
 {-- Helper Functions                                                  -}
 {----------------------------------------------------------------------}
 
+XXX: can we factor in the flooding rates to the A* sourcing metric?
+
 manhattan distance = the taxicab metric
 details @ http://en.wikipedia.org/wiki/Taxicab_geometry
 
