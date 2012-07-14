@@ -175,8 +175,12 @@ If a step doesn't work because a rock is in the way or the player would get crus
 > findLambdaLift :: Mine -> Pos
 > findLambdaLift m = head (objPos OpenLift m)
 
+> hasOpenLift :: Mine -> Bool
+> hasOpenLift m = not $ null $ objPos OpenLift m
+
 > findPaths :: Mine -> Pos -> [Pos] -> [Path]
-> findPaths m p [] = [path m p (findLambdaLift m)]
+> findPaths m p [] | hasOpenLift m = [path m p (findLambdaLift m)]
+>                  | otherwise     = []
 > findPaths m p ps = map (path m p) ps
 
 > search :: Mine -> [Path]
@@ -185,6 +189,8 @@ If a step doesn't work because a rock is in the way or the player would get crus
 I would like more information than just a Path (i.e. the # of lambdas collected).Currently we only consider the length.
 
 > choose :: [Path] -> Path
+> choose ps | trace ("choose " ++ show (length ps)) False = undefined
+> choose [] = []
 > choose ps = snd . head $ sort [(length p,p) | p <- ps]
 
 > run :: Mine -> String
