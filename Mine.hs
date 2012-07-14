@@ -59,6 +59,7 @@ rockNeedsPushing :: Mine -> Cmd -> Bool
 rockNeedsPushing mine cmd
     | cmd `elem` [Left, Right] &&
       objAt mine (move robot cmd) == Rock &&
+      inRange (bounds (grid mine)) (move (move robot cmd) cmd) &&
       objAt mine (move (move robot cmd) cmd) == Empty
         = True
     | otherwise
