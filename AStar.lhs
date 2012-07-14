@@ -110,17 +110,13 @@ We can order search nodes by their f value.
 > nextNode = (PQ.findMin . open) `fmap` get
 
 > addClosed :: SearchNode -> AStar ()
-> addClosed n = do 
->    s <- get
->    put $ s { closed = (nodePos n) : (closed s) }
+> addClosed n = modify $ \s -> s { closed = nodePos n : closed s } 
 
 > addOpen :: SearchNode -> AStar ()
-> addOpen n = do
->    s <- get
->    put $ s { open = PQ.insert n (open s)}
+> addOpen n = modify $ \s -> s { open = PQ.insert n (open s) } 
 
 > addOpens :: Pos -> Int -> SearchNode -> [Pos] -> AStar ()
-> addOpens o g p ps = mapM_ addOpen $ map (makeNode (Just p) g o) ps             
+> addOpens o g p ps = mapM_ addOpen $ map (makeNode (Just p) g o) ps       
 
 > followPath :: Maybe SearchNode -> Path -> Path
 > followPath (Just n) ps = constructPath n ps
