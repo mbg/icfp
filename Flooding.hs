@@ -1,5 +1,5 @@
 
-module Flooding where
+module Flooding (stepFloodingState, robotDrowned, defaultFlooding, makeFloodingState) where
 
 import Core
 import Control.Monad.State
@@ -12,16 +12,30 @@ data FloodingState = FloodingState
     , stepsSinceLastRise :: Int
     , waterProofingLeft  :: Int } -}
 
-defaultWater      = 0
-defaultFlooding   = 0
-defaultWaterproof = 10
+makeFloodingState :: Int -> Int -> Int -> FloodingState
+makeFloodingState level speed proofing = FloodingState level speed proofing 1 proofing
+
+defaultFlooding = makeFloodingState 0 0 10
 
 isUnderwater :: Mine -> Pos -> Bool
-isUnderwater mine (Pos (x, y)) = waterLevel (flooding mine) >= y 
+isUnderwater mine pos = isUnderwater' (flooding mine) pos
 
-stepFloodingState :: FloodingState -> FloodingState
-stepFloodingState flooding
+isUnderwater' flooding' (Pos (_, y)) = waterLevel flooding' >= y
+
+stepWaterLevel :: FloodingState -> FloodingState
+stepWaterLevel flooding
     | floodingSpeed flooding == 0 = flooding
     | rised                       = flooding{waterLevel = waterLevel flooding + 1, stepsSinceLastRise = 1}
     | otherwise                   = flooding{stepsSinceLastRise = stepsSinceLastRise flooding + 1}
-    where rised = stepsSinceLastRise flooding == floodingSpeed flooding
+    where rised = stepsSinceLastRise flooding >= floodingSpeed flooding
+
+robotDrowned :: Mine -> Bool
+robotDrowned mine = waterProofingLeft (flooding mine) < 0
+
+stepWaterProofing :: FloodingState -> Pos -> FloodingState
+stepWaterProofing flooding' pos
+    | isUnderwater' flooding' pos = flooding'{waterProofingLeft = waterProofingLeft flooding' - 1}
+    | otherwise                   = flooding'{waterProofingLeft = waterProofing flooding'}
+
+stepFloodingState :: Mine -> Mine
+stepFloodingState mine = mine{flooding = stepWaterProofing (stepWaterLevel (flooding mine)) (robotPos mine)}

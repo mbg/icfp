@@ -6,12 +6,13 @@ import Data.Maybe (isJust)
 import Debug.Trace
 import Prelude hiding (Either(..))
 import Debug.Trace (trace)
-import Core
 
---import Flooding
+import Core
+import Flooding
 
 readMine :: String -> Mine
-readMine str = Mine {grid = listArray bounds (concatMap (pad maxX . map toObj) (reverse rows))}
+readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) (reverse rows))
+                    , flooding = if null metaData then defaultFlooding else undefined}
     where
     bounds = (Pos (1,1), Pos (maxX, maxY))
     (rows, metaData) = break null (lines str)
@@ -137,14 +138,8 @@ newRockPos mine pos
 noLambdas :: Mine -> Bool
 noLambdas = all (/= Lambda) . elems . grid
 
-robotPos :: Mine -> Pos
-robotPos = head . objPos Robot
-
 rockPos :: Mine -> [Pos]
 rockPos = objPos Rock
-
-objPos :: Obj -> Mine -> [Pos]
-objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . assocs . grid
 
 objAt :: Mine -> Pos -> Obj
 objAt mine pos | inRange (bounds (grid mine)) pos = grid mine ! pos

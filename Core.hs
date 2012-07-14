@@ -99,3 +99,9 @@ move (Pos (x, y)) Up    = Pos (x, y + 1)
 move (Pos (x, y)) Down  = Pos (x, y - 1)
 move (Pos (x, y)) Wait  = Pos (x, y)
 move _            Abort = error "~gmh for prime minister"
+
+robotPos :: Mine -> Pos
+robotPos = head . objPos Robot
+
+objPos :: Obj -> Mine -> [Pos]
+objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . assocs . grid
