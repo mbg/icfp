@@ -1,5 +1,6 @@
 module Mine where
 
+import Control.Applicative ((<$>))
 import Data.Array.IArray
 import Data.Maybe (isJust)
 import Prelude hiding (Either(..))
@@ -81,11 +82,10 @@ updateMine :: Cmd -> Mine -> Mine
 updateMine cmd = updateLifts . fst . moveRocks . moveRobot cmd
 
 updateLifts :: Mine -> Mine
-updateLifts mine | noLambdas mine = foldl (setObj OpenLift)
-                                    mine (objPos ClosedLift mine)
-                 | otherwise      = mine
+updateLifts mine = mine{grid = openLift <$> grid mine}
+
 openLift :: Obj -> Obj
-openLift ClosedList = OpenLift
+openLift ClosedLift = OpenLift
 openLift obj        = obj
 
 -- moves the rocks in the mine and also returns if it actually moved any
