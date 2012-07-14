@@ -7,6 +7,7 @@ import Mine
 import AStar
 import Core
 import Flooding
+import Growths
 
 -- I/O Stuff
 

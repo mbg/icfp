@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Mine where
 
 import Control.Applicative ((<$>), (<*>))
@@ -21,9 +23,7 @@ readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) 
     maxY = length rows
     maxX = maximum (map length rows)
     pad :: Int -> [Obj] -> [Obj]
-    pad n xs | len < n   = xs ++ replicate (n - len) Empty
-             | otherwise = xs
-        where len = length xs
+    pad n xs = take n (xs ++ repeat Empty)
 
 parseFlooding :: [String] -> FloodingState
 parseFlooding css = fromMaybe defaultFlooding (makeFloodingState <$> level' <*> flooding' <*> waterproof')
@@ -58,6 +58,7 @@ moveRobot cmd mn | valid && isTrampoline obj = let (Target c) = objAt mn jumpDes
           newRock  = move newRobot cmd
           obj = objAt mn newRobot
           jumpDest' = jumpDest mn newRobot
+          
 
 removeTrampolines :: [Char] -> Obj -> Obj
 removeTrampolines cs (Trampoline c') | c' `elem` cs = Empty
@@ -123,7 +124,7 @@ updateMine :: Cmd -> Mine -> Mine
 updateMine cmd = stepFloodingState . updateEnv . moveRobot cmd
 
 mapObjs :: (Obj -> Obj) -> Mine -> Mine
-mapObjs f mine = mine{grid = f <$> grid mine}
+mapObjs f mine = mine {grid = f <$> grid mine}
 
 openLift :: Obj -> Obj
 openLift ClosedLift = OpenLift
@@ -153,9 +154,10 @@ setObj obj mine pos = mine{grid = array bounds' . map setObjCell . assocs $ (gri
           setObjCell (pos',obj') | pos' == pos = (pos',obj)
                                  | otherwise   = (pos',obj')
 
-newRockPos :: Mine -> Pos -> Maybe Pos
 -- assumes that there is a rock at oldPos
 -- if the rock doesn't move, return Nothing
+
+newRockPos :: Mine -> Pos -> Maybe Pos
 newRockPos mine pos
     | objAt' down      == Empty = Just down
     | objAt' down      == Rock &&

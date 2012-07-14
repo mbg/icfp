@@ -16,9 +16,6 @@ data Obj = Robot
          | OpenLift
          | Earth
          | Empty
-         | Trampoline | Target   
-         deriving (Eq, Ord, Enum, Show)
-=======
          | Trampoline Char
          | Target Char
          deriving (Eq, Ord, Show)
@@ -56,18 +53,22 @@ data Pos = Pos {-# UNPACK #-} !Int
 unPos (Pos x y) = (x, y)
 
 data FloodingState = FloodingState
-    { waterLevel         :: Int
-    , floodingSpeed      :: Int
-    , waterProofing      :: Int
-    , stepsSinceLastRise :: Int
-    , waterProofingLeft  :: Int }
+    { waterLevel         :: {-# UNPACK #-} !Int
+    , floodingSpeed      :: {-# UNPACK #-} !Int
+    , waterProofing      :: {-# UNPACK #-} !Int
+    , stepsSinceLastRise :: {-# UNPACK #-} !Int
+    , waterProofingLeft  :: {-# UNPACK #-} !Int }
     deriving Show
 
 -- to get [(1,1), (2,1), (3,1), ...] order
 instance Ix Pos where
-    range       (Pos x1 y1, Pos x2 y2)             = [Pos x y | y <- range (y1,y2), x <- range (x1,x2)]
+    range       (Pos x1 y1, Pos x2 y2)           = [Pos x y | y <- range (y1,y2), x <- range (x1,x2)]
     unsafeIndex (Pos x1 y1, Pos x2 y2) (Pos x y) = unsafeIndex (y1,y2) y * unsafeRangeSize (x1,x2) + unsafeIndex (x1,x2) x
     inRange     (Pos x1 y1, Pos x2 y2) (Pos x y) = inRange (x1,x2) x && inRange (y1,y2) y
+    {-# INLINE range #-}
+    {-# INLINE unsafeIndex #-}
+    {-# INLINE inRange #-}
+    
 data Cmd = Left
          | Right
          | Up
@@ -101,24 +102,24 @@ charObjs =
     ,('O' , OpenLift)
     ,('.' , Earth)
     ,(' ' , Empty)
-    ,('A' , Trampoline)
-    ,('B' , Trampoline)
-    ,('C' , Trampoline)
-    ,('D' , Trampoline)
-    ,('E' , Trampoline)
-    ,('F' , Trampoline)
-    ,('G' , Trampoline)
-    ,('H' , Trampoline)
-    ,('I' , Trampoline)
-    ,('1' , Target)
-    ,('2' , Target)
-    ,('3' , Target)
-    ,('4' , Target)
-    ,('5' , Target)
-    ,('6' , Target)
-    ,('7' , Target)
-    ,('8' , Target)
-    ,('9' , Target)]
+    ,('A' , Trampoline 'A')
+    ,('B' , Trampoline 'B')
+    ,('C' , Trampoline 'C')
+    ,('D' , Trampoline 'D')
+    ,('E' , Trampoline 'E')
+    ,('F' , Trampoline 'F')
+    ,('G' , Trampoline 'G')
+    ,('H' , Trampoline 'H')
+    ,('I' , Trampoline 'I')
+    ,('1' , Target '1')
+    ,('2' , Target '2')
+    ,('3' , Target '3')
+    ,('4' , Target '4')
+    ,('5' , Target '5')
+    ,('6' , Target '6')
+    ,('7' , Target '7')
+    ,('8' , Target '8')
+    ,('9' , Target '9')]
 
 showCmd :: Cmd -> Char
 showCmd Left  = 'L'

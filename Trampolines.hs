@@ -2,6 +2,4 @@
 module Trampolines where
 
 import Core
-
-theGame :: ()
-theGame = ()
+import Data.Maybe (fromJust)
