@@ -34,14 +34,11 @@ details @ http://en.wikipedia.org/wiki/Taxicab_geometry
 
 Finds the positions adjacent to a position. We remove illegal positions from this list.
 
-XXX: doesn't consider a robot pushing rocks
-
+> {-# DEPRECATED surroundings "We should be using nextPossibleStates instead!" #-}
 > surroundings :: Mine -> Pos -> [Pos]
-> surroundings m p = map (move p) allowedCmds
->    where allowedCmds = filter allowedCmd dirs
->          allowedCmd cmd = inBounds cmd && not (isLosingMove newMine cmd) && isValidMove newMine cmd
->          newMine = setRobotPos m p
->          inBounds = inRange (bounds (grid m)) . move p
+> surroundings m p = map (move p) notLosingCmds
+>    where notLosingCmds = filter (\cmd -> isValidMove newMine cmd && not (isLosingMove newMine cmd)) dirs
+>          newMine       = setRobotPos m p
            
 > nextPossibleStates :: Mine -> [Mine]
 > nextPossibleStates mn = map (flip updateMine mn) ((filter . isValidMove) mn dirs)
@@ -166,6 +163,7 @@ If a step doesn't work because a rock is in the way or the player would get crus
 
 > simulate :: Mine -> Path -> Path
 > simulate m []                       = (choose . search) m
+> simulate m (Abort:_)                = [Abort]
 > simulate m (x:xs) | isValidMove m x = x : simulate (updateMine x m) xs
 >                   | otherwise       = (choose . search) m
 
@@ -175,8 +173,12 @@ If a step doesn't work because a rock is in the way or the player would get crus
 > findLambdaLift :: Mine -> Pos
 > findLambdaLift m = head (objPos OpenLift m)
 
+> hasOpenLift :: Mine -> Bool
+> hasOpenLift m = not $ null $ objPos OpenLift m
+
 > findPaths :: Mine -> Pos -> [Pos] -> [Path]
-> findPaths m p [] = [path m p (findLambdaLift m)]
+> findPaths m p [] | hasOpenLift m = [path m p (findLambdaLift m)]
+>                  | otherwise     = []
 > findPaths m p ps = map (path m p) ps
 
 > search :: Mine -> [Path]
@@ -185,6 +187,8 @@ If a step doesn't work because a rock is in the way or the player would get crus
 I would like more information than just a Path (i.e. the # of lambdas collected).Currently we only consider the length.
 
 > choose :: [Path] -> Path
+> choose ps | trace ("choose " ++ show (length ps)) False = undefined
+> choose [] = []
 > choose ps = snd . head $ sort [(length p,p) | p <- ps]
 
 > run :: Mine -> String
