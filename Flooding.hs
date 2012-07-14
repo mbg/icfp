@@ -20,7 +20,7 @@ defaultFlooding = makeFloodingState 0 0 10
 isUnderwater :: Mine -> Pos -> Bool
 isUnderwater mine pos = isUnderwater' (flooding mine) pos
 
-isUnderwater' flooding' (Pos (_, y)) = waterLevel flooding' >= y
+isUnderwater' flooding' (Pos _ y) = waterLevel flooding' >= y
 
 stepWaterLevel :: FloodingState -> FloodingState
 stepWaterLevel flooding

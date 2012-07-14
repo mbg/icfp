@@ -30,7 +30,7 @@ manhattan distance = the taxicab metric
 details @ http://en.wikipedia.org/wiki/Taxicab_geometry
 
 > mdist :: Pos -> Pos -> Int
-> mdist (Pos (x,y)) (Pos (a,b)) = abs (x-a) + abs (y-b)
+> mdist (Pos x y) (Pos a b) = abs (x-a) + abs (y-b)
 
 Finds the positions adjacent to a position. We remove illegal positions from this list.
 
@@ -45,7 +45,7 @@ Finds the positions adjacent to a position. We remove illegal positions from thi
 >     where moves = filter (\cmd -> isValidMove mn cmd && not (isLosingMove mn cmd)) dirs
 
 > action :: Pos -> Pos -> Cmd
-> action (Pos (x,y)) (Pos (a,b)) 
+> action (Pos x y) (Pos a b) 
 >     | x < a = Right
 >     | x > a = Left
 >     | y < b = Up

@@ -45,8 +45,11 @@ mineSize = unPos . snd .  bounds . grid
 instance Show Mine where
    show = showMine
 
-newtype Pos = Pos {unPos :: (Int, Int)}
+data Pos = Pos {-# UNPACK #-} !Int
+               {-# UNPACK #-} !Int
     deriving (Eq, Ord, Show)
+
+unPos (Pos x y) = (x, y)
 
 data FloodingState = FloodingState
     { waterLevel         :: Int
@@ -58,9 +61,9 @@ data FloodingState = FloodingState
 
 -- to get [(1,1), (2,1), (3,1), ...] order
 instance Ix Pos where
-    range       (Pos (x1,y1), Pos (x2,y2))             = [Pos (x,y) | y <- range (y1,y2), x <- range (x1,x2)]
-    unsafeIndex (Pos (x1,y1), Pos (x2,y2)) (Pos (x,y)) = unsafeIndex (y1,y2) y * unsafeRangeSize (x1,x2) + unsafeIndex (x1,x2) x
-    inRange     (Pos (x1,y1), Pos (x2,y2)) (Pos (x,y)) = inRange (x1,x2) x && inRange (y1,y2) y
+    range       (Pos x1 y1, Pos x2 y2)             = [Pos x y | y <- range (y1,y2), x <- range (x1,x2)]
+    unsafeIndex (Pos x1 y1, Pos x2 y2) (Pos x y) = unsafeIndex (y1,y2) y * unsafeRangeSize (x1,x2) + unsafeIndex (x1,x2) x
+    inRange     (Pos x1 y1, Pos x2 y2) (Pos x y) = inRange (x1,x2) x && inRange (y1,y2) y
 data Cmd = Left
          | Right
          | Up
@@ -107,11 +110,11 @@ showPath :: Path -> String
 showPath = map showCmd
 
 move :: Pos -> Cmd -> Pos
-move (Pos (x, y)) Left  = Pos (x - 1, y)
-move (Pos (x, y)) Right = Pos (x + 1, y)
-move (Pos (x, y)) Up    = Pos (x, y + 1)
-move (Pos (x, y)) Down  = Pos (x, y - 1)
-move (Pos (x, y)) Wait  = Pos (x, y)
+move (Pos x y) Left  = Pos (x - 1)  y
+move (Pos x y) Right = Pos (x + 1)  y
+move (Pos x y) Up    = Pos  x      (y + 1)
+move (Pos x y) Down  = Pos  x      (y - 1)
+move (Pos x y) Wait  = Pos  x       y
 move _            Abort = error "~gmh for prime minister"
 
 robotPos :: Mine -> Pos

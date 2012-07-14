@@ -16,8 +16,8 @@ readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) 
                     , flooding = parseFlooding metaData
                     , trampolines = parseTrampolines metaData}
     where
-    bounds = (Pos (1,1), Pos (maxX, maxY))
-    (rows, "":metaData) = break null (lines str)
+    bounds = (Pos 1 1, Pos maxX maxY)
+    (rows, metaData) = break null (lines str)
     maxY = length rows
     maxX = maximum (map length rows)
     pad :: Int -> [Obj] -> [Obj]
@@ -108,7 +108,7 @@ isWinningMove :: Mine -> Cmd -> Bool
 isWinningMove mine cmd = objAt mine (move (robotPos mine) cmd) == OpenLift
 
 -- if we update the state and then have a rock above us
--- that wasn't there before, we lose
+-- that wasn't there before or we drown, we lose
 isLosingMove :: Mine -> Cmd -> Bool
 isLosingMove mine cmd =
     (objAt mine' (move (robotPos mine') Up) == Rock &&
@@ -182,5 +182,4 @@ rockPos :: Mine -> [Pos]
 rockPos = objPos Rock
 
 objAt :: Mine -> Pos -> Obj
-objAt mine pos | inRange (bounds (grid mine)) pos = grid mine ! pos
-               | otherwise = error $ "Index out of bounds: " ++ show pos
+objAt mine pos = grid mine ! pos
