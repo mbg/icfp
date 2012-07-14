@@ -12,6 +12,8 @@ Data.PQueue.Min requires 'cabal install pqueue'.
 
 > import Prelude hiding (Either(..))
 > import Control.Monad.State
+> import Data.Array.IArray (bounds)
+> import Data.Ix (inRange)
 > import Data.List (sort)
 > import qualified Data.PQueue.Min as PQ
 > import Mine
@@ -36,8 +38,9 @@ XXX: doesn't consider a robot pushing rocks
 > surroundings :: Mine -> Pos -> [Pos]
 > surroundings m p = map (move p) allowedCmds
 >    where allowedCmds = filter allowedCmd dirs
->          allowedCmd cmd = not (isLosingMove newMine cmd) && isValidMove newMine cmd
+>          allowedCmd cmd = inBounds cmd && not (isLosingMove newMine cmd) && isValidMove newMine cmd
 >          newMine = setRobotPos m p
+>          inBounds = inRange (bounds (grid m)) . move p
            
 > nextPossibleStates :: Mine -> [Mine]
 > nextPossibleStates mn = undefined

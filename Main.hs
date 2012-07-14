@@ -7,7 +7,6 @@ import AStar
 import Core
 import Flooding
 
-
 -- I/O Stuff
 
 runTest :: String -> IO ()
