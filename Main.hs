@@ -9,12 +9,6 @@ import Core
 import Flooding
 =======
 
--- loldicks
--- [[KeepCalmCurryOn]]
-
-
->>>>>>> dca58b65fe307a07d309ef80478f8de2545d30d6
-
 -- I/O Stuff
 main :: IO ()
 main = (readMine <$> getContents) >>= putStrLn . run
