@@ -149,7 +149,9 @@ p needs to be a Cmd
 >       m <- getMine
 >       addOpens o (nodeG n + 1) n $ surroundings m (nodePos n) 
 >       ol <- open `fmap` get
->       astar o t
+>       if PQ.null ol 
+>       then return $ constructPath n [Abort]
+>       else astar o t
 
 > path :: Mine -> Pos -> Pos -> Path
 > path m x y = let r = evalState (astar x y) (initSearchState m x y) in trace (showPath r) r
