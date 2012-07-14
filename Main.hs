@@ -5,14 +5,8 @@ import System.IO (getContents, stdin)
 import Mine
 import AStar
 import Core
-<<<<<<< HEAD
-<<<<<<< HEAD
 import Flooding
-=======
 
--- I/O Stuff
-=======
---import Flooding
 
 -- I/O Stuff
 

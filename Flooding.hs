@@ -12,4 +12,4 @@ isUnderwater :: Pos -> Int -> Bool
 isUnderwater (Pos (x, y)) n = n >= y 
 
 waterRise :: (Int, Int, Int) -> (Int, Int, Int)
-waterRise (wtr, fld, wtrpf) = 
+waterRise (wtr, fld, wtrpf) = undefined

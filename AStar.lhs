@@ -39,6 +39,8 @@ XXX: doesn't consider a robot pushing rocks
 >          allowedCmd cmd = not (isLosingMove newMine cmd) && isValidMove newMine cmd
 >          newMine = setRobotPos m p
            
+> nextPossibleStates :: Mine -> [Mine]
+> nextPossibleStates mn = undefined
 
 > action :: Pos -> Pos -> Cmd
 > action (Pos (x,y)) (Pos (a,b)) 
