@@ -31,9 +31,9 @@ nesw mn (Pos x y) = filter (inScope (mineSize mn)) [ Pos x       (y - 1)
                                                         |  otherwise      = True     
                      
 applyRazor :: Mine -> Mine
-applyRazor mn = let bd     = beardData mn
+applyRazor mn = let bd = beardData mn
                     numRaz = numberRazors bd
-                    rPos   = robotPos mn
+                    rPos = robotPos mn
                     region = cardinals mn rPos in
                 case numRaz > 0 of
                   True  -> (multi Empty mn (filter (\p -> objAt mn p == Beard) region)) 
@@ -49,19 +49,12 @@ updateBeards mn = let bg    = beardData mn in
                     True  -> growBeards mn
                     False -> mn { beardData = bg { stepsToGrowth = stepsToGrowth bg - 1 } }
 
-mn :: Mine 
-mn = undefined
-
-flatten :: [[a]] -> [a]
-flatten [] = []
-flatten (x:xs) = x ++ (flatten xs)
-
 growBeards :: Mine -> Mine
 growBeards mn = let bg = beardData mn 
                     bgr = beardGrowthRate bg
-                    beardRegions = map (cardinals mn) (beardLocs mn) 
-                    newBeards = map (filter (\p -> objAt mn p == Empty)) beardRegions in 
-                    (multim mn newBeards) { beardData = bg { stepsToGrowth = bgr - 1 }, beardLocs = beardLocs mn ++ flatten newBeards  }
+                    beardRegions = map (cardinals mn) (objPos Beard mn) in 
+                (multim mn ( map (filter (\p -> objAt mn p == Empty)) beardRegions ) ) 
+                { beardData = bg { stepsToGrowth = bgr - 1 } }
                 where multim :: Mine -> [[Pos]] -> Mine
                       multim m []       = m
                       multim m (p:ps)   = multim (multi m p) ps
