@@ -89,7 +89,7 @@ data Cmd = Left
          deriving (Eq, Ord, Show)
 
 dirs :: [Cmd]
-dirs = [Left, Right, Up, Down]
+dirs = [Left, Right, Up, Down, Cut, Wait]
 
 type Path = [Cmd]
 
