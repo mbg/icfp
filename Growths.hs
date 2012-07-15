@@ -23,9 +23,11 @@ cardinals mn (Pos x y) = filter (inScope (mineSize mn)) [ Pos (x - 1) (y - 1)
 applyRazor :: Mine -> Mine
 applyRazor mn = let rPos = robotPos mn
                     region = cardinals mn rPos in
-                multi Empty mn region
+                multi Empty mn (filter (\p -> objAt mn p == Beard) region)
                 where multi _ m []       = m
                       multi obj m (p:ps) = multi obj (setObj obj m p) ps
-                
+                      
 updateBeards :: Mine -> Mine
-updateBeards = undefined
+updateBeards mn = undefined
+
+growBeards :: Mine -> Mine

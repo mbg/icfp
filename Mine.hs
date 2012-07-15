@@ -181,5 +181,3 @@ noLambdas = all (/= Lambda) . elems . grid
 rockPos :: Mine -> [Pos]
 rockPos = objPos Rock
 
-objAt :: Mine -> Pos -> Obj
-objAt mine pos = grid mine ! pos
