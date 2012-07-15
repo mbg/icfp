@@ -1,6 +1,7 @@
 module Core where
 
 import Prelude hiding (Either(..))
+import qualified Prelude as P
 import Control.Applicative ((<$>))
 import Data.Array.IArray
 import Data.Ix
@@ -28,6 +29,7 @@ isTrampoline :: Obj -> Bool
 isTrampoline (Trampoline _) = True
 isTrampoline _ = False
 
+data Score = Progress {-# UNPACK #-}  !Int | Final {-# UNPACK #-} !Int
 
 data Mine = Mine 
     { grid             :: Array Pos Obj
@@ -35,7 +37,8 @@ data Mine = Mine
     , beardData        :: BeardGrowth  
     , trampolines      :: [(Char,Char)]
     , stepsTaken       :: {-# UNPACK #-} !Int
-    , lambdasCollected :: {-# UNPACK #-} !Int}
+    , lambdasCollected :: {-# UNPACK #-} !Int 
+    , finalScore       :: Score }
 
 incSteps  mine' = mine'{stepsTaken       = stepsTaken       mine' + 1}
 incLambda mine' = mine'{lambdasCollected = lambdasCollected mine' + 1}

@@ -22,7 +22,8 @@ readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) 
                     , beardData = parseBeard metaData             
                     , trampolines = parseTrampolines metaData
                     , stepsTaken = 0
-                    , lambdasCollected = 0}
+                    , lambdasCollected = 0
+                    , finalScore = Progress 0}
     where
     bounds = (Pos 1 1, Pos maxX maxY)
     (rows, metaData) = break null (lines str)
