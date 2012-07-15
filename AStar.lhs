@@ -134,7 +134,7 @@ We can order search nodes by their f value.
 >     Nothing  -> ps
 
 > astar :: Pos -> Pos -> AStar (Path, Mine)
-> astar o t = do
+> astar o t = {-# SCC "astar" #-} do
 >   n <- nextNode
 >   if isTarget n t 
 >   then return $ (constructPath n [], nodeMine n)
@@ -147,5 +147,7 @@ We can order search nodes by their f value.
 >       else astar o t
 
 > path :: Mine -> Pos -> Pos -> (Path, Mine)
-> path m x y = evalState (astar x y) (initSearchState m x y)
+> path m x y = {-# SCC "path" #-} evalState (astar x y) (initSearchState m x y)
 
+
+-- run, path and mcs
