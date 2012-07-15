@@ -126,7 +126,6 @@ updateEnv mine = openLiftH . updateBeards <$> (updateWater =<< moveRocks mine)
 updateMine :: Cmd -> Mine -> Maybe Mine
 updateMine cmd = updateEnv <=< flip robotCmd cmd
 
-
 openLiftH :: Mine -> Mine
 openLiftH m | noLambdas m = mapObjs openLift m
             | otherwise   = m
