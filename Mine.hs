@@ -35,7 +35,7 @@ parseBeard :: [String] -> BeardGrowth
 parseBeard css = fromMaybe defaultBeard (BeardGrowth <$> numberRazors' <*> beardGrowthRate' <*> ((subtract 1) <$> beardGrowthRate'))
     where numberRazors'    = getOpt "Razors " css
           beardGrowthRate' = getOpt "Growth " css
-          defaultBeard     = BeardGrowth 25 0 24
+          defaultBeard     = BeardGrowth 0 25 24
 
 parseFlooding :: [String] -> FloodingState
 parseFlooding css = fromMaybe defaultFlooding (makeFloodingState <$> level' <*> flooding' <*> waterproof')
@@ -52,43 +52,54 @@ parseTrampolines = catMaybes . map parseTrampoline
 parseTrampoline :: String -> Maybe (Char, Char)
 parseTrampoline str = do
     (tramp:str') <- stripPrefix "Trampoline " str
-    (target:_)   <- stripPrefix " targets "   str'
+    (target:_  ) <- stripPrefix " targets "   str'
     return (tramp, target)
 
 
 -- does NOT include the falling rocks, the main
 -- function will deal with this
-moveRobot = undefined
-{-
-moveRobot :: Cmd -> Mine -> Maybe Mine
-moveRobot cmd mn | valid && isTrampoline obj = let (Target c) = objAt mn jumpDest' in mapObjs (removeTrampolines (toThisTarget c mn)) (setRobotPos mn jumpDest')
-    -- Empty where robot was, Robot where target x is, Empty where all old trampoline x
-                 | valid && rockNeedsPushing mn cmd = let !rockMovedMine = moveObj mn newRobot newRock in moveObj rockMovedMine oldRobot newRobot
-    -- move the rock then move the robot
-                 | valid = moveObj mn oldRobot newRobot
-    -- just move the robot
-                 | otherwise          = mn
-    where valid = isValidMove mn cmd
-          oldRobot = robotPos mn
-          newRobot = move oldRobot cmd
-          newRock  = move newRobot cmd
-          obj = objAt mn newRobot
-          jumpDest' = jumpDest mn newRobot
 
-moveRobot :: Cmd -> Mine -> Maybe Mine
-moveRobot Abort mine = abort mine
-moveRobot cmd mine | obj == OpenLift           = undefined
-                   | obj `elem` [Empty, Earth] = moveObj mine loc dest
-                   | isRocklike obj            = undefined
-                   | isTrampoline obj          = undefined
--}
+robotCmd :: Mine -> Cmd -> Maybe Mine
+robotCmd mine Abort            = Just (failure mine)
+robotCmd mine Cut
+    | razorsLeft > 0 &&
+      adjacentBeards > 0        = Just (applyRazor mine)
+    where
+    razorsLeft = numberRazors (beardData mine)
+    adjacentBeards = error "adjacentBeards not implemented yet"
+robotCmd mine Wait              = Just mine
+robotCmd mine cmd
+    | obj == OpenLift           = Just (victory (incSteps moved))
+    | obj `elem` [Empty, Earth] = Just moved
+    | isRocklike obj &&
+      cmd `elem` [Left, Right]  = pushObj mine cmd
+    | isTrampoline obj          = Just (incSteps (jump mine dest))
+    | obj == Lambda             = Just (incLambda moved)
+    where
+    loc   = robotPos mine
+    dest  = move loc cmd
+    obj   = objAt mine dest
+    moved = incSteps (moveObj mine loc dest)
+robotCmd _    _                 = Nothing
+
+-- Only call with a cmd of Left or Right and with a pushable object in front of it, this is not checked
+pushObj :: Mine -> Cmd -> Maybe Mine
+pushObj mine cmd
+    | inBounds mine dest2 &&
+      objAt mine dest2 == Empty = Just (incSteps (moveObj mine' loc dest))
+    | otherwise                 = Nothing
+    where loc   = robotPos mine
+          dest  = move loc cmd
+          dest2 = move dest cmd
+          mine' = moveObj mine dest dest2
+
 -- finalise a map we've aborted
 failure :: Mine -> Mine
-failure = undefined
+failure = error "failure not implemented yet"
 
 -- finalise a map we've moved onto the open lift of
 victory :: Mine -> Mine
-victory = undefined
+victory = error "victory not implemented yet"
           
 isValidMove :: Mine -> Cmd -> Bool
 isValidMove mine cmd
@@ -102,12 +113,11 @@ isValidMove mine cmd
           obj = objAt mine (move robot cmd)
 isValidMove _ _ = False
 
+inBounds :: Mine -> Pos -> Bool
+inBounds mine = inRange (bounds (grid mine))
+
 nextPossibleStates :: Mine -> [Mine]
 nextPossibleStates mine = catMaybes (map (flip updateMine mine) dirs)
-
--- move an object from its old position to a new position and leave Empty behind
-moveObj :: Mine -> Pos -> Pos -> Mine
-moveObj mine old new = setObj (objAt mine old) (setObj Empty mine old) new
 
 setRobotPos :: Mine -> Pos -> Mine
 setRobotPos mine = moveObj mine (robotPos mine)
@@ -123,22 +133,13 @@ rockNeedsPushing mine cmd
         = False
     where robot = robotPos mine
 
--- if we move onto an open lift, we win
-isWinningMove :: Mine -> Cmd -> Bool
-isWinningMove mine cmd = objAt mine (move (robotPos mine) cmd) == OpenLift
-
-isLosingMove :: Mine -> Cmd -> Bool
-isLosingMove mine cmd = undefined -- OBSELETE
-
 -- if we return Nothing, then the robot would have died
 updateEnv :: Mine -> Maybe Mine
 updateEnv mine = openLiftH . updateBeards <$> (updateWater =<< moveRocks mine)
 
 updateMine :: Cmd -> Mine -> Maybe Mine
-updateMine cmd = updateEnv <=< moveRobot cmd
+updateMine cmd = updateEnv <=< flip robotCmd cmd
 
-mapObjs :: (Obj -> Obj) -> Mine -> Mine
-mapObjs f mine = mine {grid = f <$> grid mine}
 
 openLiftH :: Mine -> Mine
 openLiftH m | noLambdas m = mapObjs openLift m
@@ -196,6 +197,3 @@ noLambdas = all (/= Lambda) . elems . grid
 
 rockPos :: Mine -> [Pos]
 rockPos = objPos Rock
-
-objAt :: Mine -> Pos -> Obj
-objAt mine pos = grid mine ! pos

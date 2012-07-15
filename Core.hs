@@ -1,6 +1,7 @@
 module Core where
 
 import Prelude hiding (Either(..))
+import Control.Applicative ((<$>))
 import Data.Array.IArray
 import Data.Ix
 import Data.Maybe (fromJust)
@@ -36,6 +37,9 @@ data Mine = Mine
     , stepsTaken       :: {-# UNPACK #-} !Int
     , lambdasCollected :: {-# UNPACK #-} !Int}
 
+incSteps  mine' = mine'{stepsTaken       = stepsTaken       mine' + 1}
+incLambda mine' = mine'{lambdasCollected = lambdasCollected mine' + 1}
+
 showMine :: Mine -> String
 showMine mine = unlines (grid' ++ metaData)
     where
@@ -60,7 +64,15 @@ data Pos = Pos {-# UNPACK #-} !Int
 
 unPos (Pos x y) = (x, y)
 
+objAt :: Mine -> Pos -> Obj
+objAt mine pos = grid mine ! pos
 
+mapObjs :: (Obj -> Obj) -> Mine -> Mine
+mapObjs f mine = mine {grid = f <$> grid mine}
+
+-- move an object from its old position to a new position and leave Empty behind
+moveObj :: Mine -> Pos -> Pos -> Mine
+moveObj mine old new = setObj (objAt mine old) (setObj Empty mine old) new
 
 data FloodingState = FloodingState
     { waterLevel         :: {-# UNPACK #-} !Int
@@ -162,6 +174,11 @@ move (Pos x y) Up    = Pos  x      (y + 1)
 move (Pos x y) Down  = Pos  x      (y - 1)
 move (Pos x y) Wait  = Pos  x       y
 move _            Abort = error "~gmh for prime minister"
+
+isRocklike :: Obj -> Bool
+isRocklike Rock     = True
+isRocklike HOLambda = True
+isRocklike _        = False
 
 robotPos :: Mine -> Pos
 robotPos = head . objPos Robot

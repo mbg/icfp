@@ -28,4 +28,4 @@ applyRazor mn = let rPos = robotPos mn
                       multi obj m (p:ps) = multi obj (setObj obj m p) ps
                 
 updateBeards :: Mine -> Mine
-updateBeards = undefined
+updateBeards = id

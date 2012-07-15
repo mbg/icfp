@@ -5,9 +5,22 @@ import Core
 import Data.Maybe (fromJust)
 import Data.Array.IArray ((!))
 
-removeTrampolines :: [Char] -> Obj -> Obj
-removeTrampolines cs (Trampoline c') | c' `elem` cs = Empty
-removeTrampolines _ obj = obj
+-- given the position of a trampoline, jump the robot
+jump :: Mine -> Pos -> Mine
+jump mine trampoline = moveObj mine' loc jumpDest'
+    where
+    loc         = robotPos mine
+    jumpDest'   = jumpDest mine trampoline
+    Target c    = objAt mine jumpDest'
+    trampoChars = toThisTarget c mine
+    mine'       = removeTrampolines trampoChars mine
+
+removeTrampolines :: [Char] -> Mine -> Mine
+removeTrampolines cs = mapObjs (removeTrampoline cs)
+
+removeTrampoline :: [Char] -> Obj -> Obj
+removeTrampoline cs (Trampoline c') | c' `elem` cs = Empty
+removeTrampoline _ obj = obj
 
 -- given the letter for a target, find all trampoline letters that lead here
 
