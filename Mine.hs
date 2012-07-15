@@ -5,6 +5,7 @@ module Mine where
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad
 import Data.Array.IArray
+import Data.List (stripPrefix)
 import Data.Maybe (isJust, catMaybes, fromMaybe, fromJust)
 import Debug.Trace
 import Prelude hiding (Either(..))
@@ -27,22 +28,30 @@ readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) 
     pad :: Int -> [Obj] -> [Obj]
     pad n xs = take n (xs ++ repeat Empty)
 
+parseBeard :: [String] -> BeardGrowth
+parseBeard css = fromMaybe defaultBeard (BeardGrowth <$> numberRazors' <*> beardGrowthRate' <*> ((subtract 1) <$> beardGrowthRate'))
+    where numberRazors' = getOpt "Razors " css
+          beardGrowthRate' = getOpt "Growth " css
+          defaultBeard = BeardGrowth 25 0 24
+
 parseFlooding :: [String] -> FloodingState
 parseFlooding css = fromMaybe defaultFlooding (makeFloodingState <$> level' <*> flooding' <*> waterproof')
-    where level' = msum (map (\cs -> case cs of
-              'W':'a':'t':'e':'r':' ':cs' -> Just (read cs')
-              _ -> Nothing) css)
-          flooding' = msum (map (\cs -> case cs of
-              'F':'l':'o':'o':'d':'i':'n':'g':' ':cs' -> Just (read cs')
-              _ -> Nothing) css)
-          waterproof' = msum (map (\cs -> case cs of
-              'W':'a':'t':'e':'r':'p':'r':'o':'o':'f':' ':cs' -> Just (read cs')
-              _ -> Nothing) css)
+    where level' = getOpt "Water " css
+          flooding' = getOpt "Flooding " css
+          waterproof' = getOpt "Waterproof " css
+
+getOpt :: Read a => String -> [String] -> Maybe a
+getOpt xs xss = read <$> msum (map (stripPrefix xs) xss)
 
 parseTrampolines :: [String] -> [(Char, Char)]
-parseTrampolines =  catMaybes . map (\cs -> case cs of
-    'T':'r':'a':'m':'p':'o':'l':'i':'n':'e':' ':tramp:' ':'t':'a':'r':'g':'e':'t':'s':' ':target:_ -> Just (tramp, target)
-    _ -> Nothing)
+parseTrampolines = catMaybes . map parseTrampoline
+
+parseTrampoline :: String -> Maybe (Char, Char)
+parseTrampoline str = do
+    (tramp:str') <- stripPrefix "Trampoline " str
+    (target:_)   <- stripPrefix " targets "   str'
+    return (tramp, target)
+
 
 -- does NOT include the falling rocks, the main
 -- function will deal with this
