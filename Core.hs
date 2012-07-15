@@ -111,52 +111,41 @@ data Cmd = Left
 
 --mbg: Uncommenting cut currently causes an error because of
 --     pattern matching failure in move
-dirs :: [Cmd]
-dirs = [Left, Right, Up, Down, {-Cut,-} Wait]
+--djm: should be fixed now
+cmds :: [Cmd]
+cmds = [Left, Right, Up, Down, Wait, Abort, Cut]
 
 type Path = [Cmd]
 
 toChar :: Obj -> Char
-toChar (Trampoline char) = char
-toChar (Target char) = char
-toChar obj = fromJust . flip lookup (map swap charObjs) $ obj
+toChar Robot          = 'R'
+toChar Wall           = '#'
+toChar Rock           = '*'
+toChar Lambda         = '\\'
+toChar ClosedLift     = 'L'
+toChar OpenLift       = 'O'
+toChar Earth          = '.'
+toChar Empty          = ' '
+toChar Beard          = 'W'
+toChar Razor          = '!'
+toChar HOLambda       = '@'
+toChar (Trampoline c) = c
+toChar (Target     c) = c
 
 toObj :: Char -> Obj
+toObj 'R'  = Robot
+toObj '#'  = Wall
+toObj '*'  = Rock
+toObj '\\' = Lambda
+toObj 'L'  = ClosedLift
+toObj 'O'  = OpenLift
+toObj '.'  = Earth
+toObj ' '  = Empty
+toObj 'W'  = Beard
+toObj '!'  = Razor
+toObj '@'  = HOLambda
 toObj char | char `elem` ['A'..'I'] = Trampoline char
            | char `elem` ['1'..'9'] = Target char
-           | otherwise = fromJust . flip lookup charObjs $ char
-
-charObjs :: [(Char, Obj)]
-charObjs =
-    [('R' , Robot)
-    ,('#' , Wall)
-    ,('*' , Rock)
-    ,('\\', Lambda)
-    ,('L' , ClosedLift)
-    ,('O' , OpenLift)
-    ,('.' , Earth)
-    ,(' ' , Empty)
-    ,('A' , Trampoline 'A')
-    ,('B' , Trampoline 'B')
-    ,('C' , Trampoline 'C')
-    ,('D' , Trampoline 'D')
-    ,('E' , Trampoline 'E')
-    ,('F' , Trampoline 'F')
-    ,('G' , Trampoline 'G')
-    ,('H' , Trampoline 'H')
-    ,('I' , Trampoline 'I')
-    ,('1' , Target '1')
-    ,('2' , Target '2')
-    ,('3' , Target '3')
-    ,('4' , Target '4')
-    ,('5' , Target '5')
-    ,('6' , Target '6')
-    ,('7' , Target '7')
-    ,('8' , Target '8')
-    ,('9' , Target '9')
-    ,('W' , Beard)
-    ,('!' , Razor)
-    ,('@' , HOLambda)]
 
 showCmd :: Cmd -> Char
 showCmd Left  = 'L'
@@ -187,7 +176,10 @@ robotPos :: Mine -> Pos
 robotPos = head . objPos Robot
 
 objPos :: Obj -> Mine -> [Pos]
-objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . assocs . grid
+objPos obj = objsPos [obj]
+
+objsPos :: [Obj] -> Mine -> [Pos]
+objsPos objs = map fst . filter (\(pos, obj') -> obj' `elem` objs) . assocs . grid
 
 setObj :: Obj -> Mine -> Pos -> Mine
 setObj obj mine pos = mine{grid = array bounds' . map setObjCell . assocs $ (grid mine)}
