@@ -182,4 +182,4 @@ noLambdas :: Mine -> Bool
 noLambdas = all (/= Lambda) . elems . grid
 
 rockPos :: Mine -> [Pos]
-rockPos = objPos Rock
+rockPos = objsPos [Rock, HOLambda]
