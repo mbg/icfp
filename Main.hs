@@ -8,6 +8,7 @@ import MCS
 import Core
 import Flooding
 import Growths
+import HOLambdas
 
 -- I/O Stuff
 

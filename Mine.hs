@@ -49,7 +49,7 @@ parseTrampolines =  catMaybes . map (\cs -> case cs of
 moveRobot :: Cmd -> Mine -> Mine
 moveRobot cmd mn | valid && isTrampoline obj = let (Target c) = objAt mn jumpDest' in mapObjs (removeTrampolines (toThisTarget c mn)) (setRobotPos mn jumpDest')
     -- Empty where robot was, Robot where target x is, Empty where all old trampoline x
-                 | valid && rockNeedsPushing mn cmd = moveObj (moveObj mn newRobot newRock) oldRobot newRobot
+                 | valid && rockNeedsPushing mn cmd = let rockMovedMine = moveObj mn newRobot newRock in moveObj rockMovedMine oldRobot newRobot
     -- move the rock then move the robot
                  | valid = moveObj mn oldRobot newRobot
     -- just move the robot
@@ -60,6 +60,9 @@ moveRobot cmd mn | valid && isTrampoline obj = let (Target c) = objAt mn jumpDes
           newRock  = move newRobot cmd
           obj = objAt mn newRobot
           jumpDest' = jumpDest mn newRobot
+          
+-- moveObj :: Mine -> Pos -> Pos
+-- setObj  :: Obj -> Mine -> Pos -> Mine
           
 isValidMove :: Mine -> Cmd -> Bool
 isValidMove mine cmd
