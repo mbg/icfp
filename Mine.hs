@@ -97,24 +97,12 @@ failure mn = let Progress s l = finalScore mn in mn { finalScore = Final $! (l *
 -- finalise a map we've moved onto the open lift of
 victory :: Mine -> Mine
 victory mn = let Progress s l = finalScore mn in mn { finalScore = Final $! (l * 75) - s }
-          
-isValidMove :: Mine -> Cmd -> Bool
-isValidMove mine cmd
-    | not (inRange (bounds (grid mine)) (move robot cmd)) = False
-    | (obj `elem` [Empty, Earth, Lambda, OpenLift]) ||
-      isTrampoline obj
-        = True
-    | rockNeedsPushing mine cmd
-        = True
-    where robot = robotPos mine
-          obj = objAt mine (move robot cmd)
-isValidMove _ _ = False
 
 inBounds :: Mine -> Pos -> Bool
 inBounds mine = inRange (bounds (grid mine))
 
 nextPossibleStates :: Mine -> [Mine]
-nextPossibleStates mine = catMaybes (map (flip updateMine mine) dirs)
+nextPossibleStates mine = catMaybes (map (flip updateMine mine) cmds)
 
 setRobotPos :: Mine -> Pos -> Mine
 setRobotPos mine = moveObj mine (robotPos mine)
