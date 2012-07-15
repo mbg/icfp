@@ -46,6 +46,8 @@ data Mine = Mine
     { grid             :: Array Pos Obj
     , flooding         :: FloodingState
     , beardData        :: BeardGrowth  
+    , rockLocs         :: [Pos] 
+    , beardLocs        :: [Pos]  
     , trampolines      :: [(Char,Char)]
     , finalScore       :: Score }
 
@@ -178,6 +180,11 @@ isRocklike _        = False
 
 robotPos :: Mine -> Pos
 robotPos = head . objPos Robot
+
+-- wat do with these?
+
+-- objsPos (Rock:objs)  mine  = rockLocs mine
+-- objsPos (Beard:objs) mine = beardLocs mine
 
 objPos :: Obj -> Mine -> [Pos]
 objPos obj = objsPos [obj]

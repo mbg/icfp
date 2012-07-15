@@ -13,6 +13,7 @@
 > import qualified Data.Set as S
 > import qualified Data.PQueue.Min as PQ
 > import Debug.Trace (trace)
+> import Control.Parallel
 
 > import Core
 > import Mine
@@ -116,7 +117,7 @@
 >            mcs'
 
 > mcs :: Mine -> Path
-> mcs m = evalState mcs' (initMCS m)
+> mcs m = {-# SCC "mcs" #-} evalState mcs' (initMCS m)
 
 
 
@@ -147,6 +148,6 @@ I would like more information than just a Path (i.e. the # of lambdas collected)
 > choose ps = snd . head $ sort [(length p,p) | p <- ps]
 
 > run :: Mine -> String
-> run = showPath . mcs
+> run = {-# SCC "run" #-} showPath . mcs
 
 run = showPath . choose . search

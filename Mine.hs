@@ -19,11 +19,13 @@ import Trampolines
 import Growths
 
 readMine :: String -> Mine
-readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) (reverse rows))
-                    , flooding = parseFlooding metaData
-                    , beardData = parseBeard metaData             
+readMine str = Mine { grid        = listArray bounds (concatMap (pad maxX . map toObj) (reverse rows))
+                    , flooding    = parseFlooding metaData
+                    , beardData   = parseBeard metaData             
+                    , rockLocs    = parseRockLoc  undefined             
+                    , beardLocs   = parseBeardLoc undefined             
                     , trampolines = parseTrampolines metaData
-                    , finalScore = Progress 0 0}
+                    , finalScore  = Progress 0 0}
     where
     bounds = (Pos 1 1, Pos maxX maxY)
     (rows, metaData) = break null (lines str)
@@ -31,6 +33,9 @@ readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) 
     maxX = maximum (map length rows)
     pad :: Int -> [Obj] -> [Obj]
     pad n xs = take n (xs ++ repeat Empty)
+
+parseBeardLoc = undefined
+parseRockLoc = undefined
 
 parseBeard :: [String] -> BeardGrowth
 parseBeard css = fromMaybe defaultBeard (BeardGrowth <$> numberRazors' <*> beardGrowthRate' <*> ((subtract 1) <$> beardGrowthRate'))
