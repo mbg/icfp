@@ -4,6 +4,7 @@ module Trampolines where
 import Core
 import Data.Maybe (fromJust)
 import Data.Array.IArray ((!))
+import Debug.Trace (trace)
 
 -- given the position of a trampoline, jump the robot
 jump :: Mine -> Pos -> Mine
@@ -30,6 +31,6 @@ toThisTarget c = map fst . filter ((== c) . snd) . trampolines
 -- given the position of a trampoline, find its corresponding target
 
 jumpDest :: Mine -> Pos -> Pos
-jumpDest mine pos = head (objPos (Target . fromJust . lookup c . trampolines $ mine) mine)
+jumpDest mine pos = trace "jumpDest head call in Trampolines" head (objPos (Target . fromJust . lookup c . trampolines $ mine) mine)
     where
     (Trampoline c) = grid mine ! pos

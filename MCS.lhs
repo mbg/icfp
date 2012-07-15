@@ -137,7 +137,7 @@ I would like more information than just a Path (i.e. the # of lambdas collected)
 
 > choose :: [Path] -> Path
 > choose [] = []
-> choose ps = snd . head $ sort [(length p,p) | p <- ps]
+> choose ps = snd . trace "choose head call in MCS" head $ sort [(length p,p) | p <- ps]
 
 > run :: Mine -> String
 > run = {-# SCC "run" #-} showPath . mcs
