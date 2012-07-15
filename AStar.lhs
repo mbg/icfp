@@ -16,7 +16,6 @@ Data.PQueue.Min requires 'cabal install pqueue'.
 > import Data.Ix (inRange)
 > import Data.List (sort)
 > import qualified Data.PQueue.Min as PQ
-> import qualified Data.Set as S
 > import Mine
 > import Core
 > import Debug.Trace (trace)
@@ -85,12 +84,12 @@ We can order search nodes by their f value.
 > isTarget n p = nodePos n == p
 
 > data SearchState = SS {
->   closed :: S.Set Pos,
+>   closed :: [Pos],
 >   open   :: PQ.MinQueue SearchNode
 > }
 
 > initSearchState :: Mine -> Pos -> Pos -> SearchState
-> initSearchState m o p = SS S.empty (PQ.singleton n)
+> initSearchState m o p = SS [] (PQ.singleton n)
 >                         where
 >                             h = mdist o p 
 >                             n = SN m Nothing Nothing o 0 h
@@ -106,12 +105,13 @@ We can order search nodes by their f value.
 >                return $ PQ.findMin (open st)
 
 > addClosed :: SearchNode -> AStar ()
-> addClosed n = modify $ \s -> s { closed = nodePos n `S.insert` closed s } 
+> addClosed n = modify $ \s -> s { closed = nodePos n : closed s } 
 
 > addOpen :: SearchNode -> AStar ()
 > addOpen n = do s <- get
->                when (nodePos n `S.member` closed s)
->                     (put $ s { open = PQ.insert n (open s) } )
+>                if nodePos n `elem` closed s
+>                then return ()
+>                else put $ s { open = PQ.insert n (open s) } 
 
 > makeNode :: SearchNode -> Int -> Pos -> Mine -> SearchNode
 > makeNode n g o m = SN m (Just n) (Just a) d g (mdist o d)
@@ -141,7 +141,7 @@ We can order search nodes by their f value.
 >   else do
 >       addClosed n
 >       addOpens o (nodeG n + 1) n $ nextPossibleStates (nodeMine n) 
->       ol <- gets open
+>       ol <- open `fmap` get
 >       if PQ.null ol 
 >       then return $ (constructPath n [Abort], nodeMine n)
 >       else astar o t

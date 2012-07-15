@@ -90,7 +90,7 @@
 >     n <- nextNode
 >     if Abort `elem` nodePath n
 >     then addAbort (nodePath n) >> mcs'
->     else if trace ("node " ++ show n) (hasOpenLift (nodeMine n)) 
+>     else if (hasOpenLift (nodeMine n))
 >        then do
 >          addOpen $ makeNode (nodePath n) $ findLiftPath (nodeMine n)
 >          mcs'

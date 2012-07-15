@@ -63,6 +63,7 @@ robotCmd mine Abort             = Just (failure mine)
 robotCmd mine Cut
     | razorsLeft > 0 &&
       beardsNearby mine > 0     = Just (applyRazor mine)
+    | otherwise                 = Nothing
     where
     razorsLeft = numberRazors (beardData mine)
 robotCmd mine Wait              = Just mine
@@ -73,12 +74,12 @@ robotCmd mine cmd
       cmd `elem` [Left, Right]  = pushObj mine cmd
     | isTrampoline obj          = Just (incSteps (jump mine dest))
     | obj == Lambda             = Just (incLambda moved)
+    | otherwise                 = Nothing
     where
     loc   = robotPos mine
     dest  = move loc cmd
     obj   = objAt mine dest
     moved = incSteps (moveObj mine loc dest)
-robotCmd _    _                 = Nothing
 
 -- Only call with a cmd of Left or Right and with a pushable object in front of it, this is not checked
 pushObj :: Mine -> Cmd -> Maybe Mine

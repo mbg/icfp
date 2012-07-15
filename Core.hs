@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -funbox-strict-fields #-}
+
 module Core where
 
 import Prelude hiding (Either(..))
@@ -18,8 +20,8 @@ data Obj = Robot
          | OpenLift
          | Earth
          | Empty
-         | Trampoline {-# UNPACK #-} !Char
-         | Target     {-# UNPACK #-} !Char
+         | Trampoline !Char
+         | Target     !Char
          | Beard  
          | Razor  
          | HOLambda 
@@ -62,10 +64,8 @@ mineSize = unPos . snd .  bounds . grid
 instance Show Mine where
    show = showMine
 
-data Pos = Pos {-# UNPACK #-} !Int
-               {-# UNPACK #-} !Int
+data Pos = Pos !Int !Int
     deriving (Eq, Ord, Show)
-
 unPos (Pos x y) = (x, y)
 
 objAt :: Mine -> Pos -> Obj
@@ -79,17 +79,17 @@ moveObj :: Mine -> Pos -> Pos -> Mine
 moveObj mine old new = setObj (objAt mine old) (setObj Empty mine old) new
 
 data FloodingState = FloodingState
-    { waterLevel         :: {-# UNPACK #-} !Int
-    , floodingSpeed      :: {-# UNPACK #-} !Int
-    , waterProofing      :: {-# UNPACK #-} !Int
-    , stepsSinceLastRise :: {-# UNPACK #-} !Int
-    , waterProofingLeft  :: {-# UNPACK #-} !Int }
+    { waterLevel         :: !Int
+    , floodingSpeed      :: !Int
+    , waterProofing      :: !Int
+    , stepsSinceLastRise :: !Int
+    , waterProofingLeft  :: !Int }
     deriving Show
 
 data BeardGrowth = BeardGrowth 
-    { numberRazors       :: {-# UNPACK #-} !Int 
-    , beardGrowthRate    :: {-# UNPACK #-} !Int 
-    , stepsToGrowth   :: {-# UNPACK #-} !Int } 
+    { numberRazors       :: !Int 
+    , beardGrowthRate    :: !Int 
+    , stepsToGrowth      :: !Int } 
     deriving Show
 
 -- to get [(1,1), (2,1), (3,1), ...] order
@@ -114,7 +114,7 @@ data Cmd = Left
 --     pattern matching failure in move
 --djm: should be fixed now
 cmds :: [Cmd]
-cmds = [Left, Right, Up, Down, Wait, Abort, Cut]
+cmds = [Left, Right, Up, Down, Abort] --, Wait, Abort, Cut]
 
 type Path = [Cmd]
 
@@ -166,7 +166,7 @@ move (Pos x y) Right = Pos (x + 1)  y
 move (Pos x y) Up    = Pos  x      (y + 1)
 move (Pos x y) Down  = Pos  x      (y - 1)
 move (Pos x y) Wait  = Pos  x       y
-move _            Abort = error "~gmh for prime minister"
+move _         Abort = error "~gmh for prime minister"
 
 isRocklike :: Obj -> Bool
 isRocklike Rock     = True
