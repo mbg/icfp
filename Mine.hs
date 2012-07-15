@@ -61,11 +61,9 @@ parseTrampoline str = do
 robotCmd :: Mine -> Cmd -> Maybe Mine
 robotCmd mine Abort             = Just (failure mine)
 robotCmd mine Cut
-    | razorsLeft > 0 &&
+    | numberRazors (beardData mine) > 0 &&
       beardsNearby mine > 0     = Just (applyRazor mine)
     | otherwise                 = Nothing
-    where
-    razorsLeft = numberRazors (beardData mine)
 robotCmd mine Wait              = Just mine
 robotCmd mine cmd
     | obj == OpenLift           = Just (victory moved)

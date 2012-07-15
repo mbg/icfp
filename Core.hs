@@ -36,6 +36,12 @@ isTrampoline _ = False
 
 data Score = Progress !Int !Int | Final !Int
 
+finishedScore :: Mine -> Maybe Int
+finishedScore = score . finalScore
+    where
+    score (Final s) = Just s
+    score _         = Nothing
+
 data Mine = Mine 
     { grid             :: Array Pos Obj
     , flooding         :: FloodingState
