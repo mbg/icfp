@@ -58,7 +58,9 @@ parseTrampoline str = do
 
 -- does NOT include the falling rocks, the main
 -- function will deal with this
-moveRobot :: Cmd -> Mine -> Mine
+moveRobot = undefined
+{-
+moveRobot :: Cmd -> Mine -> Maybe Mine
 moveRobot cmd mn | valid && isTrampoline obj = let (Target c) = objAt mn jumpDest' in mapObjs (removeTrampolines (toThisTarget c mn)) (setRobotPos mn jumpDest')
     -- Empty where robot was, Robot where target x is, Empty where all old trampoline x
                  | valid && rockNeedsPushing mn cmd = let !rockMovedMine = moveObj mn newRobot newRock in moveObj rockMovedMine oldRobot newRobot
@@ -72,6 +74,21 @@ moveRobot cmd mn | valid && isTrampoline obj = let (Target c) = objAt mn jumpDes
           newRock  = move newRobot cmd
           obj = objAt mn newRobot
           jumpDest' = jumpDest mn newRobot
+
+moveRobot :: Cmd -> Mine -> Maybe Mine
+moveRobot Abort mine = abort mine
+moveRobot cmd mine | obj == OpenLift           = undefined
+                   | obj `elem` [Empty, Earth] = moveObj mine loc dest
+                   | isRocklike obj            = undefined
+                   | isTrampoline obj          = undefined
+-}
+-- finalise a map we've aborted
+failure :: Mine -> Mine
+failure = undefined
+
+-- finalise a map we've moved onto the open lift of
+victory :: Mine -> Mine
+victory = undefined
           
 isValidMove :: Mine -> Cmd -> Bool
 isValidMove mine cmd
@@ -84,6 +101,9 @@ isValidMove mine cmd
     where robot = robotPos mine
           obj = objAt mine (move robot cmd)
 isValidMove _ _ = False
+
+nextPossibleStates :: Mine -> [Mine]
+nextPossibleStates mine = catMaybes (map (flip updateMine mine) dirs)
 
 -- move an object from its old position to a new position and leave Empty behind
 moveObj :: Mine -> Pos -> Pos -> Mine
@@ -107,20 +127,15 @@ rockNeedsPushing mine cmd
 isWinningMove :: Mine -> Cmd -> Bool
 isWinningMove mine cmd = objAt mine (move (robotPos mine) cmd) == OpenLift
 
--- if we update the state and then have a rock above us
--- that wasn't there before or we drown, we lose
 isLosingMove :: Mine -> Cmd -> Bool
-isLosingMove mine cmd =
-    (objAt mine' (move (robotPos mine') Up) == Rock &&
-     objAt mine  (move (robotPos mine') Up) /= Rock) ||
-    (robotDrowned (updateEnv mine))
-    where mine' = fst . moveRocks. moveRobot cmd $ mine
+isLosingMove mine cmd = undefined -- OBSELETE
 
-updateEnv :: Mine -> Mine
-updateEnv = openLiftH . fst . moveRocks . updateWater . updateBeards
+-- if we return Nothing, then the robot would have died
+updateEnv :: Mine -> Maybe Mine
+updateEnv mine = openLiftH . updateBeards <$> (updateWater =<< moveRocks mine)
 
-updateMine :: Cmd -> Mine -> Mine
-updateMine cmd = updateEnv . moveRobot cmd
+updateMine :: Cmd -> Mine -> Maybe Mine
+updateMine cmd = updateEnv <=< moveRobot cmd
 
 mapObjs :: (Obj -> Obj) -> Mine -> Mine
 mapObjs f mine = mine {grid = f <$> grid mine}
@@ -134,27 +149,28 @@ openLift ClosedLift = OpenLift
 openLift obj        = obj
 
 -- moves the rocks in the mine and also returns if it actually moved any
-moveRocks :: Mine -> (Mine, Bool)
-moveRocks mine | not (any (isJust . fst) newOldPairs) = (mine  , False)
-               | otherwise                            = (mine'', True )
+-- if we have a rock above a robot's head that wasn't there in the original mine, return Nothing
+moveRocks :: Mine -> Maybe Mine
+moveRocks mine | not (any (isJust . snd) oldNewPairs) = Just mine -- no rocks were moved
+               | wasCrushed                           = Nothing
+               | otherwise                            = Just mine'
     where
-    newOldPairs :: [(Maybe Pos, Pos)]
-    newOldPairs  = map (\pos -> (newRockPos mine pos, pos)) (rockPos mine)
-    mine'        = foldl maybeEmptyOld mine  newOldPairs
-    mine''       = foldl maybeReplaceNew mine' newOldPairs
+    oldNewPairs :: [(Pos, Maybe Pos)]
+    oldNewPairs  = map (\pos -> (pos, newRockPos mine pos)) (rockPos mine)
+    mine'        = foldl maybeMove mine oldNewPairs
 
-    maybeEmptyOld :: Mine -> (Maybe Pos, Pos) -> Mine
-    maybeEmptyOld mine (Nothing, _  )   = mine
-    maybeEmptyOld mine (Just _ , old)   = setObj Empty mine old
+    maybeMove :: Mine -> (Pos, Maybe Pos) -> Mine
+    maybeMove mine (old, Just new) = moveObj mine old new
+    maybeMove mine _               = mine
 
-    maybeReplaceNew :: Mine -> (Maybe Pos, Pos) -> Mine
-    maybeReplaceNew mine (Nothing , _) = mine
-    maybeReplaceNew mine (Just new, _) = setObj Rock mine new
+    wasCrushed :: Bool
+    -- is there a rock above the robot's head in mine' that wasn't there in mine?
+    wasCrushed = objAt mine' (move (robotPos mine) Up) == Rock
+              && objAt mine  (move (robotPos mine) Up) /= Rock
 
 
 -- assumes that there is a rock at oldPos
 -- if the rock doesn't move, return Nothing
-
 newRockPos :: Mine -> Pos -> Maybe Pos
 newRockPos mine pos
     | objAt' down      == Empty = Just down
