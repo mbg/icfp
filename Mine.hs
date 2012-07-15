@@ -60,13 +60,12 @@ parseTrampoline str = do
 -- function will deal with this
 
 robotCmd :: Mine -> Cmd -> Maybe Mine
-robotCmd mine Abort            = Just (failure mine)
+robotCmd mine Abort             = Just (failure mine)
 robotCmd mine Cut
     | razorsLeft > 0 &&
-      adjacentBeards > 0        = Just (applyRazor mine)
+      beardsNearby mine > 0     = Just (applyRazor mine)
     where
     razorsLeft = numberRazors (beardData mine)
-    adjacentBeards = error "adjacentBeards not implemented yet"
 robotCmd mine Wait              = Just mine
 robotCmd mine cmd
     | obj == OpenLift           = Just (victory (incSteps moved))
