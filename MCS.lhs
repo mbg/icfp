@@ -10,6 +10,7 @@
 > import Control.Monad.State
 > import Control.Parallel
 > import Data.List (sort)
+> import qualified Data.Set as S
 > import qualified Data.PQueue.Min as PQ
 > import Debug.Trace (trace)
 
@@ -37,13 +38,14 @@
 
 > data SearchState = SS {
 >   open   :: PQ.MinQueue SearchNode,
->   aborts :: [Path]
+>   aborts :: S.Set Path,
+>   closed :: S.Set SearchNode
 > }
 
 > type MCS = State SearchState
 
 > initMCS :: Mine -> SearchState
-> initMCS m = SS (PQ.singleton (SN m [])) []
+> initMCS m = SS (PQ.singleton (SN m [])) S.empty S.empty
 
 > nextNode :: MCS SearchNode
 > nextNode =  do 
@@ -52,10 +54,17 @@
 >   return $ PQ.findMin (open st)
 
 > addAbort :: Path -> MCS ()
-> addAbort p = modify $ \s -> s { aborts = p : aborts s}
+> addAbort p = modify $ \s -> s { aborts = p `S.insert` aborts s}
 
 > addOpen :: SearchNode -> MCS ()
-> addOpen n = modify $ \s -> s { open = PQ.insert n (open s) } 
+> addOpen n = do 
+>   s <- get
+>   if n `S.member` closed s
+>   then return ()
+>   else put $ s { open = PQ.insert n (open s) } 
+
+> addClosed :: SearchNode -> MCS ()
+> addClosed n = modify $ \s -> s { closed = n `S.insert` closed s}
 
 > addOpens :: [SearchNode] -> MCS ()
 > addOpens = mapM_ addOpen  
@@ -65,7 +74,6 @@
 >                     where
 >                       p  = robotPos m
 >                       ps = objPos Lambda m
-
 > findLiftPath :: Mine -> (Path,Mine)
 > findLiftPath m = let r = path m (robotPos m) (findLambdaLift m) in par r r
 
@@ -78,9 +86,9 @@
 > returnAbort :: MCS Path
 > returnAbort = do
 >    al <- aborts `fmap` get
->    if null al 
+>    if S.null al 
 >    then trace ("I am returning abort because the abort list is empty") (return [Abort])
->    else return $ snd $ head $ sort [(length p, p) | p <- al]
+>    else return $ snd $ head $ sort [(length p, p) | p <- S.toList al]
 
 > isGoal :: Mine -> Bool
 > isGoal m = case finishedScore m of
@@ -94,11 +102,12 @@
 >   then returnAbort
 >   else do
 >     n <- nextNode
+>     addClosed n
 >     if isGoal (nodeMine n)
 >     then return $ nodePath n
 >     else if Abort `elem` nodePath n
 >       then addAbort (nodePath n) >> mcs'
->       else if {-trace (show n)-} (hasOpenLift (nodeMine n))
+>       else if trace (show n) (hasOpenLift (nodeMine n))
 >          then do
 >            addOpen $ makeNode (nodePath n) $ findLiftPath (nodeMine n)
 >            mcs'
