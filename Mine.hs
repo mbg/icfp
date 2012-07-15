@@ -56,7 +56,7 @@ parseTrampoline str = do
     (target:_  ) <- stripPrefix " targets "   str'
     return (tramp, target)
 
--- if the move is possible, return Just (Left result)
+-- if the move is possible, return Just result
 -- if the move is not possible, return Nothing
 robotCmd :: Mine -> Cmd -> Maybe Mine
 robotCmd mine Abort             = Just (failure mine)

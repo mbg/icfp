@@ -8,6 +8,7 @@
 {----------------------------------------------------------------------}
 
 > import Control.Monad.State
+> import Control.Parallel
 > import Data.List (sort)
 > import qualified Data.PQueue.Min as PQ
 > import Debug.Trace (trace)
@@ -67,7 +68,7 @@
 >                       ps = objPos Lambda m
 
 > findLiftPath :: Mine -> (Path,Mine)
-> findLiftPath m = path m (robotPos m) (findLambdaLift m)
+> findLiftPath m = let r = path m (robotPos m) (findLambdaLift m) in par r r
 
 > makeNode :: Path -> (Path,Mine) -> SearchNode
 > makeNode cs (p,m) = SN m (cs ++ p)

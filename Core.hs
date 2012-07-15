@@ -116,11 +116,8 @@ data Cmd = Left
          | Cut -- w/ Hutton's Razor 
          deriving (Eq, Ord, Show)
 
---mbg: Uncommenting cut currently causes an error because of
---     pattern matching failure in move
---djm: should be fixed now
 cmds :: [Cmd]
-cmds = [Left, Right, Up, Down, Abort] --, Wait, Abort, Cut]
+cmds = [Left, Right, Up, Down, Cut, Wait {-Abort-}] --, Wait, Abort, Cut]
 
 type Path = [Cmd]
 
