@@ -151,4 +151,4 @@ I would like more information than just a Path (i.e. the # of lambdas collected)
 > run :: Mine -> String
 > run = {-# SCC "run" #-} showPath . mcs
 
-run = showPath . search
+ run = showPath . search
