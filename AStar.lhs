@@ -34,12 +34,6 @@ details @ http://en.wikipedia.org/wiki/Taxicab_geometry
 
 Finds the positions adjacent to a position. We remove illegal positions from this list.
 
-> {-# DEPRECATED surroundings "We should be using nextPossibleStates instead!" #-}
-> surroundings :: Mine -> Pos -> [Pos]
-> surroundings m p = map (move p) notLosingCmds
->    where notLosingCmds = filter (\cmd -> isValidMove newMine cmd && not (isLosingMove newMine cmd)) dirs
->          newMine       = setRobotPos m p
-           
 > nextPossibleStates :: Mine -> [Mine]
 > nextPossibleStates mn = map (flip updateMine mn) moves
 >     where moves = filter (\cmd -> isValidMove mn cmd && not (isLosingMove mn cmd)) dirs
