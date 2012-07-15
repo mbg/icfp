@@ -168,3 +168,9 @@ robotPos = head . objPos Robot
 
 objPos :: Obj -> Mine -> [Pos]
 objPos obj = map fst . filter (\(pos, obj') -> obj == obj') . assocs . grid
+
+setObj :: Obj -> Mine -> Pos -> Mine
+setObj obj mine pos = mine{grid = array bounds' . map setObjCell . assocs $ (grid mine)}
+    where bounds' = bounds (grid mine)
+          setObjCell (pos',obj') | pos' == pos = (pos',obj)
+                                 | otherwise   = (pos',obj')

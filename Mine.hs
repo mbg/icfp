@@ -168,11 +168,6 @@ moveRocks mine | not (any (isJust . snd) oldNewPairs) = Just mine -- no rocks we
     wasCrushed = objAt mine' (move (robotPos mine) Up) == Rock
               && objAt mine  (move (robotPos mine) Up) /= Rock
 
-setObj :: Obj -> Mine -> Pos -> Mine
-setObj obj mine pos = mine{grid = array bounds' . map setObjCell . assocs $ (grid mine)}
-    where bounds' = bounds (grid mine)
-          setObjCell (pos',obj') | pos' == pos = (pos',obj)
-                                 | otherwise   = (pos',obj')
 
 -- assumes that there is a rock at oldPos
 -- if the rock doesn't move, return Nothing

@@ -35,19 +35,23 @@
 >   compare x y = length (nodePath x) `compare` length (nodePath y)
 
 > data SearchState = SS {
->   open :: PQ.MinQueue SearchNode
+>   open   :: PQ.MinQueue SearchNode,
+>   aborts :: [Path]
 > }
 
 > type MCS = State SearchState
 
 > initMCS :: Mine -> SearchState
-> initMCS m = SS $ PQ.singleton (SN m [])
+> initMCS m = SS (PQ.singleton (SN m [])) []
 
 > nextNode :: MCS SearchNode
 > nextNode =  do 
 >   st <- get
 >   put $ st { open = PQ.deleteMin (open st)}
 >   return $ PQ.findMin (open st)
+
+> addAbort :: Path -> MCS ()
+> addAbort p = modify $ \s -> s { aborts = p : aborts s}
 
 > addOpen :: SearchNode -> MCS ()
 > addOpen n = modify $ \s -> s { open = PQ.insert n (open s) } 
@@ -70,16 +74,29 @@
 > makeNodes :: SearchNode -> [(Path,Mine)] -> [SearchNode]
 > makeNodes (SN _ p) = map (makeNode p)
 
+> returnAbort :: MCS Path
+> returnAbort = do
+>    al <- aborts `fmap` get
+>    if null al 
+>    then return [Abort]
+>    else return $ snd $ head $ sort [(length p, p) | p <- al]
+
 > mcs' :: MCS Path
 > mcs' = do
->   n <- nextNode
->   if trace ("node " ++ show n) (hasOpenLift (nodeMine n)) 
->   then do
->       addOpen $ makeNode (nodePath n) $ findLiftPath (nodeMine n)
->       mcs'
+>   ol <- open `fmap` get
+>   if PQ.null ol
+>   then returnAbort
 >   else do
->       addOpens $ makeNodes n $ findLambdaPaths (nodeMine n)
->       mcs'
+>     n <- nextNode
+>     if Abort `elem` nodePath n
+>     then addAbort (nodePath n) >> mcs'
+>     else if trace ("node " ++ show n) (hasOpenLift (nodeMine n)) 
+>        then do
+>          addOpen $ makeNode (nodePath n) $ findLiftPath (nodeMine n)
+>          mcs'
+>        else do
+>          addOpens $ makeNodes n $ findLambdaPaths (nodeMine n)
+>          mcs'
 
 > mcs :: Mine -> Path
 > mcs m = evalState mcs' (initMCS m)
@@ -115,4 +132,4 @@ I would like more information than just a Path (i.e. the # of lambdas collected)
 > run :: Mine -> String
 > run = showPath . mcs
 
- run = showPath . choose . search
+run = showPath . choose . search
