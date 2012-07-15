@@ -19,6 +19,7 @@ Data.PQueue.Min requires 'cabal install pqueue'.
 > import Mine
 > import Core
 > import Debug.Trace (trace)
+> import Control.Parallel
 
 {----------------------------------------------------------------------}
 {-- Helper Functions                                                  -}
