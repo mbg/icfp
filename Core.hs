@@ -48,6 +48,7 @@ data Mine = Mine
     , beardData        :: BeardGrowth  
     , rockLocs         :: [Pos] 
     , beardLocs        :: [Pos]  
+    , openLiftPos      :: [Pos]  
     , trampolines      :: [(Char,Char)]
     , finalScore       :: Score }
 
