@@ -24,6 +24,7 @@ readMine str = Mine { grid        = listArray bounds (concatMap (pad maxX . map 
                     , beardData   = parseBeard metaData             
                     , rockLocs    = parseRockLoc  undefined             
                     , beardLocs   = parseBeardLoc undefined             
+                    , openLiftPos = undefined                
                     , trampolines = parseTrampolines metaData
                     , finalScore  = Progress 0 0}
     where
