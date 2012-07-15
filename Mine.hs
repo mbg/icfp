@@ -21,9 +21,7 @@ readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) 
                     , flooding = parseFlooding metaData
                     , beardData = parseBeard metaData             
                     , trampolines = parseTrampolines metaData
-                    , stepsTaken = 0
-                    , lambdasCollected = 0
-                    , finalScore = Progress 0}
+                    , finalScore = Progress 0 0}
     where
     bounds = (Pos 1 1, Pos maxX maxY)
     (rows, metaData) = break null (lines str)
@@ -55,7 +53,6 @@ parseTrampoline str = do
     (tramp:str') <- stripPrefix "Trampoline " str
     (target:_  ) <- stripPrefix " targets "   str'
     return (tramp, target)
-
 
 -- does NOT include the falling rocks, the main
 -- function will deal with this
@@ -95,11 +92,23 @@ pushObj mine cmd
 
 -- finalise a map we've aborted
 failure :: Mine -> Mine
-failure = error "failure not implemented yet"
+failure mn = let Progress s l = finalScore mn in mn { finalScore = Final $! (l * 50) - s }
 
 -- finalise a map we've moved onto the open lift of
 victory :: Mine -> Mine
-victory = error "victory not implemented yet"
+victory mn = let Progress s l = finalScore mn in mn { finalScore = Final $! (l * 75) - s }
+          
+isValidMove :: Mine -> Cmd -> Bool
+isValidMove mine cmd
+    | not (inRange (bounds (grid mine)) (move robot cmd)) = False
+    | (obj `elem` [Empty, Earth, Lambda, OpenLift]) ||
+      isTrampoline obj
+        = True
+    | rockNeedsPushing mine cmd
+        = True
+    where robot = robotPos mine
+          obj = objAt mine (move robot cmd)
+isValidMove _ _ = False
 
 inBounds :: Mine -> Pos -> Bool
 inBounds mine = inRange (bounds (grid mine))
