@@ -49,6 +49,7 @@ data Mine = Mine
     , rockLocs         :: [Pos] 
     , beardLocs        :: [Pos]  
     , openLiftPos      :: [Pos]  
+    , closedLiftPos    :: [Pos]  
     , trampolines      :: [(Char,Char)]
     , finalScore       :: Score }
 
