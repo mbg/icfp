@@ -36,12 +36,12 @@ applyRazor mn = let bd     = beardData mn
                     rPos   = robotPos mn
                     region = cardinals mn rPos in
                 case numRaz > 0 of
-                  True  -> (multi mn (filter (\p -> objAt mn p == Beard) region)) 
+                  True  -> (multi Empty mn (filter (\p -> objAt mn p == Beard) region)) 
                            { beardData = bd { numberRazors = numRaz - 1 } }
                   False -> mn
-                where multi :: Mine -> [Pos] -> Mine
-                      multi m []       = m
-                      multi m (p:ps) = multi (setObj Empty m p) ps
+                where multi :: Obj -> Mine -> [Pos] -> Mine
+                      multi _ m []       = m
+                      multi obj m (p:ps) = multi obj (setObj obj m p) ps
                       
 updateBeards :: Mine -> Mine
 updateBeards mn = let bg    = beardData mn in
@@ -49,12 +49,19 @@ updateBeards mn = let bg    = beardData mn in
                     True  -> growBeards mn
                     False -> mn { beardData = bg { stepsToGrowth = stepsToGrowth bg - 1 } }
 
+mn :: Mine 
+mn = undefined
+
+flatten :: [[a]] -> [a]
+flatten [] = []
+flatten (x:xs) = x ++ (flatten xs)
+
 growBeards :: Mine -> Mine
 growBeards mn = let bg = beardData mn 
                     bgr = beardGrowthRate bg
                     beardRegions = map (cardinals mn) (beardLocs mn) 
                     newBeards = map (filter (\p -> objAt mn p == Empty)) beardRegions in 
-                    (multim mn newBeards) { beardData = bg { stepsToGrowth = bgr - 1 }, beardLocs = beardLocs mn ++ concat newBeards  }
+                    (multim mn newBeards) { beardData = bg { stepsToGrowth = bgr - 1 }, beardLocs = beardLocs mn ++ flatten newBeards  }
                 where multim :: Mine -> [[Pos]] -> Mine
                       multim m []       = m
                       multim m (p:ps)   = multim (multi m p) ps
