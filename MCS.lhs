@@ -35,19 +35,23 @@
 >   compare x y = length (nodePath x) `compare` length (nodePath y)
 
 > data SearchState = SS {
->   open :: PQ.MinQueue SearchNode
+>   open   :: PQ.MinQueue SearchNode,
+>   aborts :: [Path]
 > }
 
 > type MCS = State SearchState
 
 > initMCS :: Mine -> SearchState
-> initMCS m = SS $ PQ.singleton (SN m [])
+> initMCS m = SS (PQ.singleton (SN m [])) []
 
 > nextNode :: MCS SearchNode
 > nextNode =  do 
 >   st <- get
 >   put $ st { open = PQ.deleteMin (open st)}
 >   return $ PQ.findMin (open st)
+
+> addAbort :: Path -> MCS ()
+> addAbort p = modify $ \s -> s { aborts = p : aborts s}
 
 > addOpen :: SearchNode -> MCS ()
 > addOpen n = modify $ \s -> s { open = PQ.insert n (open s) } 
@@ -72,14 +76,20 @@
 
 > mcs' :: MCS Path
 > mcs' = do
+
+   {-ol <- open `fmap` get
+   if PQ.null ol then 
+
 >   n <- nextNode
->   if trace ("node " ++ show n) (hasOpenLift (nodeMine n)) 
->   then do
->       addOpen $ makeNode (nodePath n) $ findLiftPath (nodeMine n)
->       mcs'
->   else do
->       addOpens $ makeNodes n $ findLambdaPaths (nodeMine n)
->       mcs'
+>   if last (nodePath n) == Abort
+>   then addAbort (nodePath n) >> mcs'
+>   else if trace ("node " ++ show n) (hasOpenLift (nodeMine n)) 
+>        then do
+>          addOpen $ makeNode (nodePath n) $ findLiftPath (nodeMine n)
+>          mcs'
+>        else do
+>          addOpens $ makeNodes n $ findLambdaPaths (nodeMine n)
+>          mcs'
 
 > mcs :: Mine -> Path
 > mcs m = evalState mcs' (initMCS m)
