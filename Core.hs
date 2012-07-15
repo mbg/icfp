@@ -182,8 +182,7 @@ isRocklike HOLambda = True
 isRocklike _        = False
 
 robotPos :: Mine -> Pos
-robotPos = head . objPos Robot
-
+robotPos m = trace "robotPosition head call in Core" (head $! objPos Robot m)
 
 -- these are bad, mkay?
 
