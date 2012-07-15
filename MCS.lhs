@@ -77,13 +77,15 @@
 > mcs' :: MCS Path
 > mcs' = do
 
-   {-ol <- open `fmap` get
+   ol <- open `fmap` get
    if PQ.null ol then 
 
 >   n <- nextNode
->   if last (nodePath n) == Abort
->   then addAbort (nodePath n) >> mcs'
->   else if trace ("node " ++ show n) (hasOpenLift (nodeMine n)) 
+
+   if last (nodePath n) == Abort
+   then addAbort (nodePath n) >> mcs'
+
+>   if trace ("node " ++ show n) (hasOpenLift (nodeMine n)) 
 >        then do
 >          addOpen $ makeNode (nodePath n) $ findLiftPath (nodeMine n)
 >          mcs'
@@ -123,6 +125,7 @@ I would like more information than just a Path (i.e. the # of lambdas collected)
 > choose ps = snd . head $ sort [(length p,p) | p <- ps]
 
 > run :: Mine -> String
-> run = showPath . mcs
+ 
+run = showPath . mcs
 
- run = showPath . choose . search
+> run = showPath . choose . search
