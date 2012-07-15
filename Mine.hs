@@ -18,10 +18,10 @@ import Growths
 
 readMine :: String -> Mine
 readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) (reverse rows))
-                    , flooding = parseFlooding metaData
-                    , beardData = parseBeard metaData             
-                    , trampolines = parseTrampolines metaData
-                    , stepsTaken = 0
+                    , flooding         = parseFlooding metaData
+                    , beardData        = parseBeard metaData             
+                    , trampolines      = parseTrampolines metaData
+                    , stepsTaken       = 0
                     , lambdasCollected = 0}
     where
     bounds = (Pos 1 1, Pos maxX maxY)
@@ -99,18 +99,6 @@ failure = error "failure not implemented yet"
 -- finalise a map we've moved onto the open lift of
 victory :: Mine -> Mine
 victory = error "victory not implemented yet"
-          
-isValidMove :: Mine -> Cmd -> Bool
-isValidMove mine cmd
-    | not (inRange (bounds (grid mine)) (move robot cmd)) = False
-    | (obj `elem` [Empty, Earth, Lambda, OpenLift]) ||
-      isTrampoline obj
-        = True
-    | rockNeedsPushing mine cmd
-        = True
-    where robot = robotPos mine
-          obj = objAt mine (move robot cmd)
-isValidMove _ _ = False
 
 inBounds :: Mine -> Pos -> Bool
 inBounds mine = inRange (bounds (grid mine))
@@ -120,17 +108,6 @@ nextPossibleStates mine = catMaybes (map (flip updateMine mine) dirs)
 
 setRobotPos :: Mine -> Pos -> Mine
 setRobotPos mine = moveObj mine (robotPos mine)
-
-rockNeedsPushing :: Mine -> Cmd -> Bool
-rockNeedsPushing mine cmd
-    | cmd `elem` [Left, Right] &&
-      objAt mine (move robot cmd) == Rock &&
-      inRange (bounds (grid mine)) (move (move robot cmd) cmd) &&
-      objAt mine (move (move robot cmd) cmd) == Empty
-        = True
-    | otherwise
-        = False
-    where robot = robotPos mine
 
 -- if we return Nothing, then the robot would have died
 updateEnv :: Mine -> Maybe Mine
@@ -165,8 +142,9 @@ moveRocks mine | not (any (isJust . snd) oldNewPairs) = Just mine -- no rocks we
 
     wasCrushed :: Bool
     -- is there a rock above the robot's head in mine' that wasn't there in mine?
-    wasCrushed = objAt mine' (move (robotPos mine) Up) == Rock
-              && objAt mine  (move (robotPos mine) Up) /= Rock
+    wasCrushed = isRocklike (objAt mine' above) &&
+                 not (isRocklike (objAt mine above))
+    above = move (robotPos mine) Up
 
 
 -- assumes that there is a rock at oldPos
@@ -174,10 +152,10 @@ moveRocks mine | not (any (isJust . snd) oldNewPairs) = Just mine -- no rocks we
 newRockPos :: Mine -> Pos -> Maybe Pos
 newRockPos mine pos
     | objAt' down      == Empty = Just down
-    | objAt' down      == Rock &&
+    | isRocklike (objAt' down) &&
       objAt' right     == Empty &&
       objAt' downRight == Empty = Just downRight
-    | objAt' down      == Rock &&
+    | isRocklike (objAt' down) &&
       objAt' left      == Empty &&
       objAt' downLeft  == Empty = Just downLeft
     | objAt' down      == Lambda &&
