@@ -52,7 +52,7 @@ updateBeards mn = let bg    = beardData mn in
 growBeards :: Mine -> Mine
 growBeards mn = let bg = beardData mn 
                     bgr = beardGrowthRate bg
-                    beardRegions = map (cardinals mn) (objPos Beard mn) in 
+                    beardRegions = map (cardinals mn) (beardLocs mn) in 
                 (multim mn ( map (filter (\p -> objAt mn p == Empty)) beardRegions ) ) 
                 { beardData = bg { stepsToGrowth = bgr - 1 } }
                 where multim :: Mine -> [[Pos]] -> Mine

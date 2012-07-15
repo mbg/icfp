@@ -24,8 +24,8 @@ readMine str = Mine { grid          = listArray bounds (concatMap (pad maxX . ma
                     , beardData     = parseBeard metaData             
                     , rockLocs      = parseRockLoc  undefined             
                     , beardLocs     = parseBeardLoc undefined             
-                    , openLiftPos   = undefined                
-                    , closedLiftPos = []             
+                    , openLiftPos   = []              
+                    , closedLiftPos = parseClosedLifts undefined           
                     , trampolines   = parseTrampolines metaData
                     , finalScore    = Progress 0 0}
     where
@@ -36,9 +36,11 @@ readMine str = Mine { grid          = listArray bounds (concatMap (pad maxX . ma
     pad :: Int -> [Obj] -> [Obj]
     pad n xs = take n (xs ++ repeat Empty)
 
-parseOpenLifts = undefined
-parseBeardLoc  = undefined
-parseRockLoc   = undefined
+parseClosedLifts = undefined
+
+parseBeardLoc    = undefined
+
+parseRockLoc     = undefined
 
 parseBeard :: [String] -> BeardGrowth
 parseBeard css = fromMaybe defaultBeard (BeardGrowth <$> numberRazors' <*> beardGrowthRate' <*> ((subtract 1) <$> beardGrowthRate'))
@@ -124,13 +126,12 @@ updateMine :: Cmd -> Mine -> Maybe Mine
 updateMine cmd mine = robotCmd mine cmd >>= updateEnv
 
 openLiftH :: Mine -> Mine
-openLiftH m | noLambdas m = mapObjs openLift m
+openLiftH m | noLambdas m = openLifts m
             | otherwise   = m
 
-openLift :: Obj -> Obj
-openLift ClosedLift = OpenLift
-openLift obj        = obj
-
+openLifts :: Mine -> Mine
+openLifts m = m { openLiftPos = closedLiftPos m, closedLiftPos = [] }
+  
 -- moves the rocks in the mine and also returns if it actually moved any
 -- if we have a rock above a robot's head that wasn't there in the original mine, return Nothing
 moveRocks :: Mine -> Maybe Mine
