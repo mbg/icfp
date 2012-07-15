@@ -46,6 +46,7 @@ data Mine = Mine
     { grid             :: Array Pos Obj
     , flooding         :: FloodingState
     , beardData        :: BeardGrowth  
+    , lambdaLocs       :: [Pos]  
     , rockLocs         :: [Pos] 
     , beardLocs        :: [Pos]  
     , openLiftPos      :: [Pos]  

@@ -19,15 +19,20 @@ import Trampolines
 import Growths
 
 readMine :: String -> Mine
-readMine str = Mine { grid          = listArray bounds (concatMap (pad maxX . map toObj) (reverse rows))
-                    , flooding      = parseFlooding metaData
-                    , beardData     = parseBeard metaData             
-                    , rockLocs      = parseRockLoc  undefined             
-                    , beardLocs     = parseBeardLoc undefined             
-                    , openLiftPos   = []              
-                    , closedLiftPos = parseClosedLifts undefined           
-                    , trampolines   = parseTrampolines metaData
-                    , finalScore    = Progress 0 0}
+readMine str = let mn = Mine { grid          = listArray bounds (concatMap (pad maxX . map toObj) (reverse rows))
+                             , flooding      = parseFlooding metaData
+                             , beardData     = parseBeard metaData             
+                             , lambdaLocs    = []              
+                             , rockLocs      = []            
+                             , beardLocs     = []           
+                             , openLiftPos   = []              
+                             , closedLiftPos = []         
+                             , trampolines   = parseTrampolines metaData
+                             , finalScore    = Progress 0 0} in
+               mn { lambdaLocs    = objPos Lambda     mn
+                  , rockLocs      = objPos Rock       mn
+                  , beardLocs     = objPos Beard      mn
+                  , closedLiftPos = objPos ClosedLift mn } 
     where
     bounds = (Pos 1 1, Pos maxX maxY)
     (rows, metaData) = break null (lines str)
@@ -35,12 +40,6 @@ readMine str = Mine { grid          = listArray bounds (concatMap (pad maxX . ma
     maxX = maximum (map length rows)
     pad :: Int -> [Obj] -> [Obj]
     pad n xs = take n (xs ++ repeat Empty)
-
-parseClosedLifts = undefined
-
-parseBeardLoc    = undefined
-
-parseRockLoc     = undefined
 
 parseBeard :: [String] -> BeardGrowth
 parseBeard css = fromMaybe defaultBeard (BeardGrowth <$> numberRazors' <*> beardGrowthRate' <*> ((subtract 1) <$> beardGrowthRate'))
