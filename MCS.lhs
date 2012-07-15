@@ -125,7 +125,7 @@
 
 > simulate :: (Path,Mine) -> Path
 > simulate (p,m) | Abort `elem` p = p
->                | otherwise      = p ++ (choose . search) m
+>                | otherwise      = p ++ search m
 
 > simulatePaths :: [(Path,Mine)] -> [Path]
 > simulatePaths ps = map simulate ps
@@ -138,8 +138,9 @@
 >                  | otherwise     = []
 > findPaths m p ps                 = map (path m p) ps
 
-> search :: Mine -> [Path]
-> search m = simulatePaths $ findPaths m (robotPos m) (objPos Lambda m)
+> search :: Mine -> Path
+> search m | hasOpenLift m = fst $ path m (robotPos m) (findLambdaLift m)
+>          | otherwise     = simulate $ path m (robotPos m) (head $ objPos Lambda m)
 
 I would like more information than just a Path (i.e. the # of lambdas collected).Currently we only consider the length.
 
@@ -150,4 +151,4 @@ I would like more information than just a Path (i.e. the # of lambdas collected)
 > run :: Mine -> String
 > run = {-# SCC "run" #-} showPath . mcs
 
-run = showPath . choose . search
+run = showPath . search
