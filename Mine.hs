@@ -57,23 +57,22 @@ parseTrampoline str = do
     return (tramp, target)
 
 -- if the move is possible, return Just (Left result)
--- if the move would be possible if an earth had been removed, return Just (Right (result, earthPos))
 -- if the move is not possible, return Nothing
-robotCmd :: Mine -> Cmd -> Maybe (Either Mine (Mine, Pos))
-robotCmd mine Abort             = Just . P.Left . failure $ mine
+robotCmd :: Mine -> Cmd -> Maybe Mine
+robotCmd mine Abort             = Just (failure mine)
 robotCmd mine Cut
     | razorsLeft > 0 &&
-      beardsNearby mine > 0     = Just . P.Left . applyRazor $ mine
+      beardsNearby mine > 0     = Just (applyRazor mine)
     where
     razorsLeft = numberRazors (beardData mine)
-robotCmd mine Wait              = Just . P.Left $ mine
+robotCmd mine Wait              = Just mine
 robotCmd mine cmd
-    | obj == OpenLift           = Just . P.Left . victory . incSteps $ moved
-    | obj `elem` [Empty, Earth] = Just . P.Left $ moved
+    | obj == OpenLift           = Just (victory moved)
+    | obj `elem` [Empty, Earth] = Just moved
     | isRocklike obj &&
       cmd `elem` [Left, Right]  = pushObj mine cmd
-    | isTrampoline obj          = Just . P.Left . incSteps . jump mine $ dest
-    | obj == Lambda             = Just . P.Left . incLambda $ moved
+    | isTrampoline obj          = Just (incSteps (jump mine dest))
+    | obj == Lambda             = Just (incLambda moved)
     where
     loc   = robotPos mine
     dest  = move loc cmd
@@ -82,12 +81,10 @@ robotCmd mine cmd
 robotCmd _    _                 = Nothing
 
 -- Only call with a cmd of Left or Right and with a pushable object in front of it, this is not checked
-pushObj :: Mine -> Cmd -> Maybe (Either Mine (Mine, Pos))
+pushObj :: Mine -> Cmd -> Maybe Mine
 pushObj mine cmd
-    | inBounds' = case objAt mine dest2 of
-        Empty -> Just . P.Left . incSteps . moveObj mine' loc $ dest
-        Earth -> Just . P.Right $ (incSteps (moveObj mine' loc dest), dest2)
-        _     -> Nothing
+    | inBounds' && objAt mine dest2 == Empty
+                = Just (incSteps (moveObj mine' loc dest))
     | otherwise = Nothing
     where loc   = robotPos mine
           dest  = move loc cmd
@@ -107,10 +104,7 @@ inBounds :: Mine -> Pos -> Bool
 inBounds mine = inRange (bounds (grid mine))
 
 nextPossibleStates :: Mine -> [Mine]
-nextPossibleStates mine = fst (nextStates mine)
-
-nextStates :: Mine -> ([Mine], [(Mine, Pos)])
-nextStates mine = partitionEithers . catMaybes . map (flip updateMine mine) $ cmds
+nextPossibleStates mine = catMaybes . map (flip updateMine mine) $ cmds
 
 setRobotPos :: Mine -> Pos -> Mine
 setRobotPos mine = moveObj mine (robotPos mine)
@@ -119,12 +113,8 @@ setRobotPos mine = moveObj mine (robotPos mine)
 updateEnv :: Mine -> Maybe Mine
 updateEnv mine = openLiftH . updateBeards <$> (updateWater =<< moveRocks mine)
 
-updateMine :: Cmd -> Mine -> Maybe (Either Mine (Mine, Pos))
-updateMine cmd mine = robotCmd mine cmd >>= mapPoss updateEnv
-
-mapPoss :: (Mine -> Maybe Mine) -> Either Mine (Mine, Pos) -> Maybe (Either Mine (Mine, Pos))
-mapPoss f (P.Left mine)         = P.Left <$> f mine
-mapPoss f (P.Right (mine, pos)) = P.Right . (\m -> (m, pos)) <$> f mine
+updateMine :: Cmd -> Mine -> Maybe Mine
+updateMine cmd mine = robotCmd mine cmd >>= updateEnv
 
 openLiftH :: Mine -> Mine
 openLiftH m | noLambdas m = mapObjs openLift m
@@ -137,7 +127,7 @@ openLift obj        = obj
 -- moves the rocks in the mine and also returns if it actually moved any
 -- if we have a rock above a robot's head that wasn't there in the original mine, return Nothing
 moveRocks :: Mine -> Maybe Mine
-moveRocks mine | not (any (isJust . snd) oldNewPairs) = Just mine -- no rocks were moved
+moveRocks mine | not (any (isJust . snd) oldNewPairs) = Just mine
                | wasCrushed                           = Nothing
                | otherwise                            = Just mine'
     where
