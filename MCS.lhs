@@ -79,8 +79,13 @@
 > returnAbort = do
 >    al <- aborts `fmap` get
 >    if null al 
->    then return [Abort]
+>    then trace ("I am returning abort because the abort list is empty") (return [Abort])
 >    else return $ snd $ head $ sort [(length p, p) | p <- al]
+
+> isGoal :: Mine -> Bool
+> isGoal m = case finishedScore m of
+>   (Just _) -> True
+>   Nothing  -> False
 
 > mcs' :: MCS Path
 > mcs' = do
@@ -89,15 +94,17 @@
 >   then returnAbort
 >   else do
 >     n <- nextNode
->     if Abort `elem` nodePath n
->     then addAbort (nodePath n) >> mcs'
->     else if trace ("node " ++ show n) (hasOpenLift (nodeMine n)) 
->        then do
->          addOpen $ makeNode (nodePath n) $ findLiftPath (nodeMine n)
->          mcs'
->        else do
->          addOpens $ makeNodes n $ findLambdaPaths (nodeMine n)
->          mcs'
+>     if isGoal (nodeMine n)
+>     then return $ nodePath n
+>     else if Abort `elem` nodePath n
+>       then addAbort (nodePath n) >> mcs'
+>       else if {-trace (show n)-} (hasOpenLift (nodeMine n))
+>          then do
+>            addOpen $ makeNode (nodePath n) $ findLiftPath (nodeMine n)
+>            mcs'
+>          else do
+>            addOpens $ makeNodes n $ findLambdaPaths (nodeMine n)
+>            mcs'
 
 > mcs :: Mine -> Path
 > mcs m = evalState mcs' (initMCS m)

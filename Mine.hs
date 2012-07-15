@@ -5,10 +5,12 @@ module Mine where
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad
 import Data.Array.IArray
+import Data.Either (partitionEithers)
 import Data.List (stripPrefix)
 import Data.Maybe (isJust, catMaybes, fromMaybe, fromJust)
 import Debug.Trace
-import Prelude hiding (Either(..))
+import Prelude hiding (Left, Right)
+import qualified Prelude as P
 import Debug.Trace (trace)
 
 import Core
@@ -54,41 +56,40 @@ parseTrampoline str = do
     (target:_  ) <- stripPrefix " targets "   str'
     return (tramp, target)
 
--- does NOT include the falling rocks, the main
--- function will deal with this
-
+-- if the move is possible, return Just (Left result)
+-- if the move is not possible, return Nothing
 robotCmd :: Mine -> Cmd -> Maybe Mine
 robotCmd mine Abort             = Just (failure mine)
 robotCmd mine Cut
-    | razorsLeft > 0 &&
+    | numberRazors (beardData mine) > 0 &&
       beardsNearby mine > 0     = Just (applyRazor mine)
-    where
-    razorsLeft = numberRazors (beardData mine)
+    | otherwise                 = Nothing
 robotCmd mine Wait              = Just mine
 robotCmd mine cmd
-    | obj == OpenLift           = Just (victory (incSteps moved))
+    | obj == OpenLift           = Just (victory moved)
     | obj `elem` [Empty, Earth] = Just moved
     | isRocklike obj &&
       cmd `elem` [Left, Right]  = pushObj mine cmd
     | isTrampoline obj          = Just (incSteps (jump mine dest))
     | obj == Lambda             = Just (incLambda moved)
+    | otherwise                 = Nothing
     where
     loc   = robotPos mine
     dest  = move loc cmd
     obj   = objAt mine dest
     moved = incSteps (moveObj mine loc dest)
-robotCmd _    _                 = Nothing
 
 -- Only call with a cmd of Left or Right and with a pushable object in front of it, this is not checked
 pushObj :: Mine -> Cmd -> Maybe Mine
 pushObj mine cmd
-    | inBounds mine dest2 &&
-      objAt mine dest2 == Empty = Just (incSteps (moveObj mine' loc dest))
-    | otherwise                 = Nothing
+    | inBounds' && objAt mine dest2 == Empty
+                = Just (incSteps (moveObj mine' loc dest))
+    | otherwise = Nothing
     where loc   = robotPos mine
           dest  = move loc cmd
           dest2 = move dest cmd
           mine' = moveObj mine dest dest2
+          inBounds' = inBounds mine dest2
 
 -- finalise a map we've aborted
 failure :: Mine -> Mine
@@ -102,7 +103,7 @@ inBounds :: Mine -> Pos -> Bool
 inBounds mine = inRange (bounds (grid mine))
 
 nextPossibleStates :: Mine -> [Mine]
-nextPossibleStates mine = catMaybes (map (flip updateMine mine) cmds)
+nextPossibleStates mine = catMaybes . map (flip updateMine mine) $ cmds
 
 setRobotPos :: Mine -> Pos -> Mine
 setRobotPos mine = moveObj mine (robotPos mine)
@@ -112,7 +113,7 @@ updateEnv :: Mine -> Maybe Mine
 updateEnv mine = openLiftH . updateBeards <$> (updateWater =<< moveRocks mine)
 
 updateMine :: Cmd -> Mine -> Maybe Mine
-updateMine cmd = updateEnv <=< flip robotCmd cmd
+updateMine cmd mine = robotCmd mine cmd >>= updateEnv
 
 openLiftH :: Mine -> Mine
 openLiftH m | noLambdas m = mapObjs openLift m
@@ -125,7 +126,7 @@ openLift obj        = obj
 -- moves the rocks in the mine and also returns if it actually moved any
 -- if we have a rock above a robot's head that wasn't there in the original mine, return Nothing
 moveRocks :: Mine -> Maybe Mine
-moveRocks mine | not (any (isJust . snd) oldNewPairs) = Just mine -- no rocks were moved
+moveRocks mine | not (any (isJust . snd) oldNewPairs) = Just mine
                | wasCrushed                           = Nothing
                | otherwise                            = Just mine'
     where
