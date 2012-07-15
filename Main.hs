@@ -4,7 +4,7 @@ import System.Environment (getArgs)
 import System.IO (getContents, stdin)
 
 import Mine
-import AStar
+import MCS
 import Core
 import Flooding
 import Growths

@@ -1,7 +1,7 @@
 -- AI Stuff
 
 > module AStar (
->     run
+>     path
 > ) where
 
 {----------------------------------------------------------------------}
@@ -132,7 +132,7 @@ We can order search nodes by their f value.
 > followPath (Just n) ps = constructPath n ps
 > followPath Nothing  ps = ps
 
-p needs to be a Cmd
+
 
 > constructPath :: SearchNode -> Path -> Path
 > constructPath (SN n a _ _ _) ps = case a of
@@ -155,42 +155,3 @@ p needs to be a Cmd
 
 > path :: Mine -> Pos -> Pos -> Path
 > path m x y = evalState (astar x y) (initSearchState m x y)
-
-{----------------------------------------------------------------------}
-{-- Main Search Algorithm                                             -}
-{----------------------------------------------------------------------}
-
-If a step doesn't work because a rock is in the way or the player would get crushed, we need to run A* again
-
-> simulate :: Mine -> Path -> Path
-> simulate m []                       = (choose . search) m
-> simulate m (Abort:_)                = [Abort]
-> simulate m (x:xs) | isValidMove m x = x : simulate (updateMine x m) xs
->                   | otherwise       = (choose . search) m
-
-> simulatePaths :: Mine -> [Path] -> [Path]
-> simulatePaths m ps = map (simulate m) ps
-
-> findLambdaLift :: Mine -> Pos
-> findLambdaLift m = head (objPos OpenLift m)
-
-> hasOpenLift :: Mine -> Bool
-> hasOpenLift m = not $ null $ objPos OpenLift m
-
-> findPaths :: Mine -> Pos -> [Pos] -> [Path]
-> findPaths m p [] | hasOpenLift m = [path m p (findLambdaLift m)]
->                  | otherwise     = []
-> findPaths m p ps = map (path m p) ps
-
-> search :: Mine -> [Path]
-> search m = simulatePaths m $ findPaths m (robotPos m) (objPos Lambda m)
-
-I would like more information than just a Path (i.e. the # of lambdas collected).Currently we only consider the length.
-
-> choose :: [Path] -> Path
-> choose [] = []
-> choose ps = snd . head $ sort [(length p,p) | p <- ps]
-
-> run :: Mine -> String
-> run = showPath . choose . search
-
