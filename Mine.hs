@@ -1,10 +1,11 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables, BangPatterns #-}
 
 module Mine where
 
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad
 import Data.Array.IArray
+import Data.List (stripPrefix)
 import Data.Maybe (isJust, catMaybes, fromMaybe, fromJust)
 import Debug.Trace
 import Prelude hiding (Either(..))
@@ -18,7 +19,10 @@ import Growths
 readMine :: String -> Mine
 readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) (reverse rows))
                     , flooding = parseFlooding metaData
-                    , trampolines = parseTrampolines metaData}
+                    , beardData = undefined             
+                    , trampolines = parseTrampolines metaData
+                    , stepsTaken = 0
+                    , lambdasCollected = 0}
     where
     bounds = (Pos 1 1, Pos maxX maxY)
     (rows, metaData) = break null (lines str)
@@ -27,29 +31,37 @@ readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) 
     pad :: Int -> [Obj] -> [Obj]
     pad n xs = take n (xs ++ repeat Empty)
 
+parseBeard :: [String] -> BeardGrowth
+parseBeard css = fromMaybe defaultBeard (BeardGrowth <$> numberRazors' <*> beardGrowthRate' <*> ((subtract 1) <$> beardGrowthRate'))
+    where numberRazors' = getOpt "Razors " css
+          beardGrowthRate' = getOpt "Growth " css
+          defaultBeard = BeardGrowth 25 0 24
+
 parseFlooding :: [String] -> FloodingState
 parseFlooding css = fromMaybe defaultFlooding (makeFloodingState <$> level' <*> flooding' <*> waterproof')
-    where level' = msum (map (\cs -> case cs of
-              'W':'a':'t':'e':'r':' ':cs' -> Just (read cs')
-              _ -> Nothing) css)
-          flooding' = msum (map (\cs -> case cs of
-              'F':'l':'o':'o':'d':'i':'n':'g':' ':cs' -> Just (read cs')
-              _ -> Nothing) css)
-          waterproof' = msum (map (\cs -> case cs of
-              'W':'a':'t':'e':'r':'p':'r':'o':'o':'f':' ':cs' -> Just (read cs')
-              _ -> Nothing) css)
+    where level' = getOpt "Water " css
+          flooding' = getOpt "Flooding " css
+          waterproof' = getOpt "Waterproof " css
+
+getOpt :: Read a => String -> [String] -> Maybe a
+getOpt xs xss = read <$> msum (map (stripPrefix xs) xss)
 
 parseTrampolines :: [String] -> [(Char, Char)]
-parseTrampolines =  catMaybes . map (\cs -> case cs of
-    'T':'r':'a':'m':'p':'o':'l':'i':'n':'e':' ':tramp:' ':'t':'a':'r':'g':'e':'t':'s':' ':target:_ -> Just (tramp, target)
-    _ -> Nothing)
+parseTrampolines = catMaybes . map parseTrampoline
+
+parseTrampoline :: String -> Maybe (Char, Char)
+parseTrampoline str = do
+    (tramp:str') <- stripPrefix "Trampoline " str
+    (target:_)   <- stripPrefix " targets "   str'
+    return (tramp, target)
+
 
 -- does NOT include the falling rocks, the main
 -- function will deal with this
 moveRobot :: Cmd -> Mine -> Mine
 moveRobot cmd mn | valid && isTrampoline obj = let (Target c) = objAt mn jumpDest' in mapObjs (removeTrampolines (toThisTarget c mn)) (setRobotPos mn jumpDest')
     -- Empty where robot was, Robot where target x is, Empty where all old trampoline x
-                 | valid && rockNeedsPushing mn cmd = let rockMovedMine = moveObj mn newRobot newRock in moveObj rockMovedMine oldRobot newRobot
+                 | valid && rockNeedsPushing mn cmd = let !rockMovedMine = moveObj mn newRobot newRock in moveObj rockMovedMine oldRobot newRobot
     -- move the rock then move the robot
                  | valid = moveObj mn oldRobot newRobot
     -- just move the robot
@@ -60,9 +72,6 @@ moveRobot cmd mn | valid && isTrampoline obj = let (Target c) = objAt mn jumpDes
           newRock  = move newRobot cmd
           obj = objAt mn newRobot
           jumpDest' = jumpDest mn newRobot
-          
--- moveObj :: Mine -> Pos -> Pos
--- setObj  :: Obj -> Mine -> Pos -> Mine
           
 isValidMove :: Mine -> Cmd -> Bool
 isValidMove mine cmd
@@ -108,10 +117,10 @@ isLosingMove mine cmd =
     where mine' = fst . moveRocks. moveRobot cmd $ mine
 
 updateEnv :: Mine -> Mine
-updateEnv = openLiftH . fst . moveRocks
+updateEnv = openLiftH . fst . moveRocks . updateWater . updateBeards
 
 updateMine :: Cmd -> Mine -> Mine
-updateMine cmd = stepFloodingState . updateEnv . moveRobot cmd
+updateMine cmd = updateEnv . moveRobot cmd
 
 mapObjs :: (Obj -> Obj) -> Mine -> Mine
 mapObjs f mine = mine {grid = f <$> grid mine}

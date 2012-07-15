@@ -10,3 +10,6 @@ makeBeardGrowth startRazors growRate = BeardGrowth startRazors growRate (growRat
 -- a move
 applyRazor :: Mine -> Mine
 applyRazor mn = undefined
+
+updateBeards :: Mine -> Mine
+updateBeards = undefined

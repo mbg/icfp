@@ -29,9 +29,12 @@ isTrampoline _ = False
 
 
 data Mine = Mine 
-    { grid     :: Array Pos Obj
-    , flooding :: FloodingState
-    , trampolines :: [(Char,Char)]}
+    { grid             :: Array Pos Obj
+    , flooding         :: FloodingState
+    , beardData        :: BeardGrowth  
+    , trampolines      :: [(Char,Char)]
+    , stepsTaken       :: {-# UNPACK #-} !Int
+    , lambdasCollected :: {-# UNPACK #-} !Int}
 
 showMine :: Mine -> String
 showMine mine = unlines (grid' ++ metaData)
