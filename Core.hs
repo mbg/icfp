@@ -73,7 +73,7 @@ data FloodingState = FloodingState
 data BeardGrowth = BeardGrowth 
     { numberRazors       :: {-# UNPACK #-} !Int 
     , beardGrowthRate    :: {-# UNPACK #-} !Int 
-    , stepsSinceGrowth   :: {-# UNPACK #-} !Int } 
+    , stepsToGrowth   :: {-# UNPACK #-} !Int } 
     deriving Show
 
 -- to get [(1,1), (2,1), (3,1), ...] order
