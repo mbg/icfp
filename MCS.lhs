@@ -11,6 +11,7 @@
 > import Data.List (sort)
 > import qualified Data.PQueue.Min as PQ
 > import Debug.Trace (trace)
+> import Control.Parallel
 
 > import Core
 > import Mine
