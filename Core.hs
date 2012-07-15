@@ -29,19 +29,20 @@ isTrampoline :: Obj -> Bool
 isTrampoline (Trampoline _) = True
 isTrampoline _ = False
 
-data Score = Progress {-# UNPACK #-}  !Int | Final {-# UNPACK #-} !Int
+-- Progress: \x y where x = number of steps, y = number of lambdas
+-- Final: \x where x = total score together
+
+data Score = Progress !Int !Int | Final !Int
 
 data Mine = Mine 
     { grid             :: Array Pos Obj
     , flooding         :: FloodingState
     , beardData        :: BeardGrowth  
     , trampolines      :: [(Char,Char)]
-    , stepsTaken       :: {-# UNPACK #-} !Int
-    , lambdasCollected :: {-# UNPACK #-} !Int 
     , finalScore       :: Score }
 
-incSteps  mine' = mine'{stepsTaken       = stepsTaken       mine' + 1}
-incLambda mine' = mine'{lambdasCollected = lambdasCollected mine' + 1}
+incSteps  mn = let Progress s l = finalScore mn in mn { finalScore = Progress (s + 1) l }
+incLambda mn = let Progress s l = finalScore mn in mn { finalScore = Progress s (l + 1) }
 
 showMine :: Mine -> String
 showMine mine = unlines (grid' ++ metaData)

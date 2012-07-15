@@ -43,9 +43,6 @@ applyRazor mn = let bd = beardData mn
                       multi _ m []       = m
                       multi obj m (p:ps) = multi obj (setObj obj m p) ps
                       
-mn :: Mine
-mn = undefined
-                      
 updateBeards :: Mine -> Mine
 updateBeards mn = let bg    = beardData mn in
                   case (stepsToGrowth bg) - 1 == 0 of
@@ -67,5 +64,5 @@ growBeards mn = let bg = beardData mn
                       
                                                                 
 beardsNearby :: Mine -> Int
-beardsNearby = \m -> length $ filter (\p -> objAt m p == Beard) (nesw mn (robotPos m))
+beardsNearby = \m -> length $ filter (\p -> objAt m p == Beard) (nesw m (robotPos m))
 
