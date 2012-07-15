@@ -19,7 +19,7 @@ import Growths
 readMine :: String -> Mine
 readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) (reverse rows))
                     , flooding = parseFlooding metaData
-                    , beardData = undefined             
+                    , beardData = parseBeard metaData             
                     , trampolines = parseTrampolines metaData
                     , stepsTaken = 0
                     , lambdasCollected = 0}
@@ -33,14 +33,14 @@ readMine str = Mine { grid = listArray bounds (concatMap (pad maxX . map toObj) 
 
 parseBeard :: [String] -> BeardGrowth
 parseBeard css = fromMaybe defaultBeard (BeardGrowth <$> numberRazors' <*> beardGrowthRate' <*> ((subtract 1) <$> beardGrowthRate'))
-    where numberRazors' = getOpt "Razors " css
+    where numberRazors'    = getOpt "Razors " css
           beardGrowthRate' = getOpt "Growth " css
-          defaultBeard = BeardGrowth 25 0 24
+          defaultBeard     = BeardGrowth 25 0 24
 
 parseFlooding :: [String] -> FloodingState
 parseFlooding css = fromMaybe defaultFlooding (makeFloodingState <$> level' <*> flooding' <*> waterproof')
-    where level' = getOpt "Water " css
-          flooding' = getOpt "Flooding " css
+    where level'      = getOpt "Water "      css
+          flooding'   = getOpt "Flooding "   css
           waterproof' = getOpt "Waterproof " css
 
 getOpt :: Read a => String -> [String] -> Maybe a

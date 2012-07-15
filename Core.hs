@@ -40,7 +40,9 @@ showMine :: Mine -> String
 showMine mine = unlines (grid' ++ metaData)
     where
     grid' = reverse . splitAtEvery width . map toChar . elems . grid $ mine
-    metaData = ["Flooding: " ++ show (flooding mine), "Trampolines: " ++ show (trampolines mine)]
+    metaData = [ "Flooding: "    ++ show (flooding mine)
+               , "Trampolines: " ++ show (trampolines mine)
+               , "Beard: "       ++ show (beardData mine)]
     splitAtEvery :: Int -> [a] -> [[a]]
     splitAtEvery _ [] = []
     splitAtEvery n xs = let (x,xs') = splitAt n xs in x : splitAtEvery n xs'
