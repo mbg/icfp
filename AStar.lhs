@@ -46,10 +46,11 @@ Finds the positions adjacent to a position. We remove illegal positions from thi
 
 > action :: Pos -> Pos -> Cmd
 > action (Pos x y) (Pos a b) 
->     | x < a = Right
->     | x > a = Left
->     | y < b = Up
->     | y > b = Down
+>     | x < a            = Right
+>     | x > a            = Left
+>     | y < b            = Up
+>     | y > b            = Down
+>     | x == a && y == b = Wait
 
 {----------------------------------------------------------------------}
 {-- A* Search                                                         -}
@@ -63,6 +64,7 @@ h is the heuristic value
 f is the result of g+h
 
 > data SearchNode = SN {
+>   nodeMine     :: Mine,
 >   previousNode :: Maybe SearchNode,
 >   nodeAction   :: Maybe Cmd,
 >   nodePos      :: !Pos,
@@ -81,25 +83,21 @@ We can order search nodes by their f value.
 >     compare x y = compare (nodeF x) (nodeF y)
 
 > nodeF :: SearchNode -> Int
-> nodeF (SN _ _ _ g h) = g + h
+> nodeF (SN _ _ _ _ g h) = g + h
 
 > isTarget :: SearchNode -> Pos -> Bool
 > isTarget n p = nodePos n == p
 
 > data SearchState = SS {
->   mine   :: Mine,
 >   closed :: [Pos],
 >   open   :: PQ.MinQueue SearchNode
 > }
 
 > initSearchState :: Mine -> Pos -> Pos -> SearchState
-> initSearchState m o p = SS m [] (PQ.singleton n)
+> initSearchState m o p = SS [] (PQ.singleton n)
 >                         where
 >                             h = mdist o p 
->                             n = SN Nothing Nothing o 0 h
-
-> getMine :: AStar Mine
-> getMine = mine `fmap` get
+>                             n = SN m Nothing Nothing o 0 h
 
 > type AStar = State SearchState
 
@@ -120,12 +118,13 @@ We can order search nodes by their f value.
 >                then return ()
 >                else put $ s { open = PQ.insert n (open s) } 
 
-> makeNode :: SearchNode -> Int -> Pos -> Pos -> SearchNode
-> makeNode n g o d = SN (Just n) (Just a) d g (mdist o d)
+> makeNode :: SearchNode -> Int -> Pos -> Mine -> SearchNode
+> makeNode n g o m = SN m (Just n) (Just a) d g (mdist o d)
 >                    where
+>		         d = robotPos m
 >                        a = action (nodePos n) d
 
-> addOpens :: Pos -> Int -> SearchNode -> [Pos] -> AStar ()
+> addOpens :: Pos -> Int -> SearchNode -> [Mine] -> AStar ()
 > addOpens o g p ps = mapM_ addOpen $ map (makeNode p g o) ps       
 
 > followPath :: Maybe SearchNode -> Path -> Path
@@ -135,23 +134,23 @@ We can order search nodes by their f value.
 
 
 > constructPath :: SearchNode -> Path -> Path
-> constructPath (SN n a _ _ _) ps = case a of
+> constructPath (SN m n a _ _ _) ps = case a of
 >     (Just c) -> followPath n (c : ps)
 >     Nothing  -> ps
 
-> astar :: Pos -> Pos -> AStar Path
+> astar :: Pos -> Pos -> AStar (Path, Mine)
 > astar o t = do
 >   n <- nextNode
 >   if isTarget n t 
->   then return $ constructPath n []
+>   then return $ (constructPath n [], nodeMine n)
 >   else do
 >       addClosed n
->       m <- getMine
->       addOpens o (nodeG n + 1) n $ surroundings m (nodePos n) 
+>       addOpens o (nodeG n + 1) n $ nextPossibleStates (nodeMine n) 
 >       ol <- open `fmap` get
 >       if PQ.null ol 
->       then return $ constructPath n [Abort]
+>       then return $ (constructPath n [Abort], nodeMine n)
 >       else astar o t
 
-> path :: Mine -> Pos -> Pos -> Path
+> path :: Mine -> Pos -> Pos -> (Path, Mine)
 > path m x y = evalState (astar x y) (initSearchState m x y)
+

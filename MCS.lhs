@@ -10,6 +10,7 @@
 > import Control.Monad.State
 > import Data.List (sort)
 > import qualified Data.PQueue.Min as PQ
+> import Debug.Trace (trace)
 
 > import Core
 > import Mine
@@ -25,7 +26,7 @@
 > data SearchNode = SN {
 >   nodeMine :: Mine,
 >   nodePath :: Path
-> }
+> } deriving Show
 
 > instance Eq SearchNode where
 >   x == y = nodePath x == nodePath y
@@ -54,20 +55,31 @@
 > addOpens :: [SearchNode] -> MCS ()
 > addOpens = mapM_ addOpen  
 
-> findLambdaPaths :: Mine -> [Path]
+> findLambdaPaths :: Mine -> [(Path,Mine)]
 > findLambdaPaths m = map (path m p) ps
 >                     where
 >                       p  = robotPos m
 >                       ps = objPos Lambda m
 
+> findLiftPath :: Mine -> (Path,Mine)
+> findLiftPath m = path m (robotPos m) (findLambdaLift m)
+
+> makeNode :: Path -> (Path,Mine) -> SearchNode
+> makeNode cs (p,m) = SN m (cs ++ p)
+
+> makeNodes :: SearchNode -> [(Path,Mine)] -> [SearchNode]
+> makeNodes (SN _ p) = map (makeNode p)
+
 > mcs' :: MCS Path
 > mcs' = do
 >   n <- nextNode
->   if hasOpenLift (nodeMine n) 
->   then return [] 
+>   if trace ("node " ++ show n) (hasOpenLift (nodeMine n)) 
+>   then do
+>       addOpen $ makeNode (nodePath n) $ findLiftPath (nodeMine n)
+>       mcs'
 >   else do
->       --ps <- findLambdaPaths (nodeMine n)
->       return []
+>       addOpens $ makeNodes n $ findLambdaPaths (nodeMine n)
+>       mcs'
 
 > mcs :: Mine -> Path
 > mcs m = evalState mcs' (initMCS m)
@@ -75,27 +87,24 @@
 
 
 
-If a step doesn't work because a rock is in the way or the player would get crushed, we need to run A* again
 
-> simulate :: Mine -> Path -> Path
-> simulate m []                       = (choose . search) m
-> simulate m (Abort:_)                = [Abort]
-> simulate m (x:xs) | isValidMove m x = x : simulate (updateMine x m) xs
->                   | otherwise       = (choose . search) m
+> simulate :: (Path,Mine) -> Path
+> simulate (p,m) | Abort `elem` p = p
+>                | otherwise      = p ++ (choose . search) m
 
-> simulatePaths :: Mine -> [Path] -> [Path]
-> simulatePaths m ps = map (simulate m) ps
+> simulatePaths :: [(Path,Mine)] -> [Path]
+> simulatePaths ps = map simulate ps
 
 > findLambdaLift :: Mine -> Pos
 > findLambdaLift m = head (objPos OpenLift m)
 
-> findPaths :: Mine -> Pos -> [Pos] -> [Path]
+> findPaths :: Mine -> Pos -> [Pos] -> [(Path,Mine)]
 > findPaths m p [] | hasOpenLift m = [path m p (findLambdaLift m)]
 >                  | otherwise     = []
 > findPaths m p ps                 = map (path m p) ps
 
 > search :: Mine -> [Path]
-> search m = simulatePaths m $ findPaths m (robotPos m) (objPos Lambda m)
+> search m = simulatePaths $ findPaths m (robotPos m) (objPos Lambda m)
 
 I would like more information than just a Path (i.e. the # of lambdas collected).Currently we only consider the length.
 
@@ -104,4 +113,6 @@ I would like more information than just a Path (i.e. the # of lambdas collected)
 > choose ps = snd . head $ sort [(length p,p) | p <- ps]
 
 > run :: Mine -> String
-> run = showPath . choose . search
+> run = showPath . mcs
+
+ run = showPath . choose . search

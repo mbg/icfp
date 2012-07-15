@@ -105,13 +105,17 @@ isLosingMove mine cmd =
     where mine' = fst . moveRocks. moveRobot cmd $ mine
 
 updateEnv :: Mine -> Mine
-updateEnv = mapObjs openLift . fst . moveRocks
+updateEnv = openLiftH . fst . moveRocks
 
 updateMine :: Cmd -> Mine -> Mine
 updateMine cmd = stepFloodingState . updateEnv . moveRobot cmd
 
 mapObjs :: (Obj -> Obj) -> Mine -> Mine
 mapObjs f mine = mine {grid = f <$> grid mine}
+
+openLiftH :: Mine -> Mine
+openLiftH m | noLambdas m = mapObjs openLift m
+            | otherwise   = m
 
 openLift :: Obj -> Obj
 openLift ClosedLift = OpenLift

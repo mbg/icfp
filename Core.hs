@@ -88,8 +88,10 @@ data Cmd = Left
          | Cut -- w/ Hutton's Razor 
          deriving (Eq, Ord, Show)
 
+--mbg: Uncommenting cut currently causes an error because of
+--     pattern matching failure in move
 dirs :: [Cmd]
-dirs = [Left, Right, Up, Down, Cut, Wait]
+dirs = [Left, Right, Up, Down, {-Cut,-} Wait]
 
 type Path = [Cmd]
 
