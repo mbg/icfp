@@ -11,7 +11,7 @@ jump mine trampoline = moveObj mine' loc jumpDest'
     where
     loc         = robotPos mine
     jumpDest'   = jumpDest mine trampoline
-    Target c      = objAt mine jumpDest'
+    Target c    = objAt mine jumpDest'
     trampoChars = toThisTarget c mine
     mine'       = removeTrampolines trampoChars mine
 

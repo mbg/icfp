@@ -183,16 +183,16 @@ isRocklike _        = False
 robotPos :: Mine -> Pos
 robotPos = head . objPos Robot
 
--- wat do with these?
 
--- objsPos (Rock:objs)  mine  = rockLocs mine
--- objsPos (Beard:objs) mine = beardLocs mine
+-- these are bad, mkay?
 
 objPos :: Obj -> Mine -> [Pos]
 objPos obj = objsPos [obj]
 
 objsPos :: [Obj] -> Mine -> [Pos]
 objsPos objs = map fst . filter (\(pos, obj') -> obj' `elem` objs) . assocs . grid
+
+---
 
 setObj :: Obj -> Mine -> Pos -> Mine
 setObj obj mine pos = mine{grid = array bounds' . map setObjCell . assocs $ (grid mine)}
