@@ -41,7 +41,7 @@ djm: moved to Mine
 >   aborts :: [Path]
 > }
 
-> type MCS = State SearchState
+> type MCS = StateT SearchState IO
 
 > initMCS :: Mine -> SearchState
 > initMCS m = SS (PQ.singleton (SN m [])) []
@@ -107,8 +107,8 @@ djm: moved to Mine
 >            addOpens $ makeNodes n $ findLambdaPaths (nodeMine n)
 >            mcs'
 
-> mcs :: Mine -> Path
-> mcs m = {-# SCC "mcs" #-} evalState mcs' (initMCS m)
+> mcs :: Mine -> IO Path
+> mcs m = {-# SCC "mcs" #-} evalStateT mcs' (initMCS m)
 
 > simulate :: (Path,Mine) -> Path
 > simulate (p,m) | Abort `elem` p = p
@@ -136,7 +136,7 @@ I would like more information than just a Path (i.e. the # of lambdas collected)
 > choose [] = []
 > choose ps = snd . head $ sort [(length p,p) | p <- ps]
 
-> run :: Mine -> String
-> run = {-# SCC "run" #-} showPath . mcs
+> run :: Mine -> IO String
+> run m = {-# SCC "run" #-}  mcs m >>= return . showPath 
 
  run = showPath . search

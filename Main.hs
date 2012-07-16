@@ -12,7 +12,7 @@ import Flooding
 -- I/O Stuff
 
 runTest :: FilePath -> IO ()
-runTest f = (readMine <$> readFile f) >>= putStrLn . run
+runTest f = (readMine <$> readFile f) >>= run >>= putStrLn
 
 main :: IO ()
-main = (readMine <$> getContents) >>= putStrLn . run
+main = (readMine <$> getContents) >>= run >>= putStrLn
