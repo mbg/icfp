@@ -2,7 +2,18 @@
 module Growths where
 
 import Core
--- XXX: change inscope to inRange from Core
+{-
+
+to grow a beard with the new arrays, use objAtM to query squares and then use setObj and addObjInfo
+remember that the MutableGrid is mutable but the MineData is not!
+
+for bounds checking, use inBounds
+
+
+if you get type errors, add more "forall s."
+if you get (s ~ s1) type errors, add brackets in the signature
+
+-}
 makeBeardGrowth :: Int -> Int -> BeardGrowth
 makeBeardGrowth startRazors growRate = BeardGrowth startRazors growRate (growRate - 1)
 

@@ -164,7 +164,10 @@ moveRocks mine = do
     where
     getPair pos = newRockPos mine pos >>= \new -> return (pos,new)
     above = move (robotPos mine) Up
-    maybeMove mine (old, Just new) = moveObj mine old new
+    maybeMove mine (old, Just new) = do
+        rocklike <- objAtM mine old
+        fallSurface <- objAtM mine (move new Down)
+        moveObj mine old new
     maybeMove mine _               = return mine
 
 -- assumes that there is a rock at oldPos
