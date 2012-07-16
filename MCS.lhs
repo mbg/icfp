@@ -22,13 +22,13 @@
 {-- Minimum Cost Search                                               -}
 {----------------------------------------------------------------------}
 
-> hasOpenLift :: Mine -> Bool
-> hasOpenLift m = not $ null $ openLiftPos m
+hasOpenLift :: Mine -> Bool
+djm: moved to Mine
 
 > data SearchNode = SN {
 >   nodeMine :: Mine,
 >   nodePath :: Path
-> } deriving Show
+> }
 
 > instance Eq SearchNode where
 >   x == y = nodePath x == nodePath y
@@ -65,10 +65,10 @@
 > findLambdaPaths m = map (path m p) ps
 >                     where
 >                       p  = robotPos m
->                       ps = objPos Lambda m
+>                       ps = lambdaPos m -- XXX: HOLambdas are ignored
 
 > findLiftPath :: Mine -> (Path,Mine)
-> findLiftPath m = let r = path m (robotPos m) (findLambdaLift m) in par r r
+> findLiftPath m = let r = path m (robotPos m) (liftPos m) in par r r
 
 > makeNode :: Path -> (Path,Mine) -> SearchNode
 > makeNode cs (p,m) = SN m (cs ++ p)
@@ -121,17 +121,17 @@
 > simulatePaths :: [(Path,Mine)] -> [Path]
 > simulatePaths ps = map simulate ps
 
-> findLambdaLift :: Mine -> Pos
-> findLambdaLift m = trace "findLambdaLift call in MCS" (head (objPos OpenLift m))
+findOpenLift :: Mine -> Pos
+djm: was moved
 
 > findPaths :: Mine -> Pos -> [Pos] -> [(Path,Mine)]
-> findPaths m p [] | hasOpenLift m = [path m p (findLambdaLift m)]
+> findPaths m p [] | hasOpenLift m = [path m p (findOpenLift m)]
 >                  | otherwise     = []
 > findPaths m p ps                 = map (path m p) ps
 
 > search :: Mine -> Path
-> search m | hasOpenLift m = fst $ path m (robotPos m) (findLambdaLift m)
->          | otherwise     = simulate $ path m (robotPos m) (trace "search call in MCS" (head $ objPos Lambda m))
+> search m | hasOpenLift m = fst $ path m (robotPos m) (liftPos m)
+>          | otherwise     = simulate $ path m (robotPos m) (trace "search call in MCS" (head $ lambdaPos m))
 
 I would like more information than just a Path (i.e. the # of lambdas collected).Currently we only consider the length.
 

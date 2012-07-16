@@ -65,7 +65,7 @@ f is the result of g+h
 >   nodePos      :: !Pos,
 >   nodeG        :: {-# UNPACK #-} !Int,
 >   nodeH        :: {-# UNPACK #-} !Int
-> } deriving Show
+> }
 
 Two nodes are considered equal if they have the same position.
 

@@ -2,7 +2,7 @@
 module Growths where
 
 import Core
-
+-- XXX: change inscope to inRange from Core
 makeBeardGrowth :: Int -> Int -> BeardGrowth
 makeBeardGrowth startRazors growRate = BeardGrowth startRazors growRate (growRate - 1)
 

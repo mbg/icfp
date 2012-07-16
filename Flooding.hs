@@ -1,4 +1,4 @@
-
+{-# LANGUAGE Rank2Types #-}
 module Flooding where
 
 import Core
@@ -9,8 +9,8 @@ makeFloodingState level speed proofing = FloodingState level speed proofing 1 pr
 
 defaultFlooding = makeFloodingState 0 0 10
 
-isUnderwater :: Mine -> Pos -> Bool
-isUnderwater mine pos = isUnderwater' (flooding mine) pos
+isUnderwater :: (forall s. MutableMine s) -> Pos -> Bool
+isUnderwater (_,info) pos = isUnderwater' (flooding info) pos
 
 isUnderwater' flooding' (Pos _ y) = waterLevel flooding' >= y
 
@@ -30,7 +30,7 @@ stepWaterProofing flooding' pos
     where isUnderwater''     = isUnderwater' flooding' pos
           waterProofingLeft' = waterProofingLeft flooding'
 
-updateWater :: Mine -> Maybe Mine
-updateWater mine = do
-    flooding' <- stepWaterProofing (stepWaterLevel (flooding mine)) (robotPos mine)
-    return (mine{flooding = flooding'})
+updateWater :: forall s. MutableMine s -> Maybe (MutableMine s)
+updateWater (mGrid, info) = do
+    flooding' <- stepWaterProofing (stepWaterLevel (flooding info)) (robotPos (mGrid, info))
+    return (mGrid, info{flooding = flooding'})
