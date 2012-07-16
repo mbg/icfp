@@ -81,7 +81,7 @@ djm: moved to Mine
 >    al <- aborts `fmap` get
 >    if null al 
 >    then trace ("I am returning abort because the abort list is empty") (return [Abort])
->    else return $ snd $ trace "returnAbort call in MCS" (head $ sort [(length p, p) | p <- al])
+>    else return $ snd $ head $ sort [(length p, p) | p <- al]
 
 > isGoal :: Mine -> Bool
 > isGoal m = case finishedScore m of
@@ -110,10 +110,6 @@ djm: moved to Mine
 > mcs :: Mine -> Path
 > mcs m = {-# SCC "mcs" #-} evalState mcs' (initMCS m)
 
-
-
-
-
 > simulate :: (Path,Mine) -> Path
 > simulate (p,m) | Abort `elem` p = p
 >                | otherwise      = p ++ search m
@@ -122,7 +118,8 @@ djm: moved to Mine
 > simulatePaths ps = map simulate ps
 
 findOpenLift :: Mine -> Pos
-djm: was moved
+djm: was moved to Mine
+
 
 > findPaths :: Mine -> Pos -> [Pos] -> [(Path,Mine)]
 > findPaths m p [] | hasOpenLift m = [path m p (findOpenLift m)]
@@ -131,7 +128,7 @@ djm: was moved
 
 > search :: Mine -> Path
 > search m | hasOpenLift m = fst $ path m (robotPos m) (liftPos m)
->          | otherwise     = simulate $ path m (robotPos m) (trace "search call in MCS" (head $ lambdaPos m))
+>          | otherwise     = simulate $ path m (robotPos m) (head $ lambdaPos m)
 
 I would like more information than just a Path (i.e. the # of lambdas collected).Currently we only consider the length.
 
