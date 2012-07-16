@@ -137,7 +137,7 @@ freezeMaybeMine stMine = runST  $ do
 thawMine :: Mine -> (forall s. ST s (MutableMine s))
 thawMine (grid, info) = do
     mGrid <- thaw grid
-    return (mGrid, info)
+    return $! (mGrid, info)
 
 incSteps, incLambda :: (a, MineInfo) -> (a, MineInfo)
 incSteps  (grid, info) = let Progress s l = finalScore info in (grid, info{finalScore = Progress (s + 1) l})
@@ -146,7 +146,7 @@ incLambda (grid, info) = let Progress s l = finalScore info in (grid, info{final
 finishedScore :: (a, MineInfo) -> Maybe Int
 finishedScore (_, info) = score (finalScore info)
     where
-    score (Final s) = Just s
+    score (Final s) = Just $! s
     score _         = Nothing
 
 -- {-# WARNING unsafeMapObj "This is only for use for types not indexed in MineInfo" #-}
@@ -154,7 +154,7 @@ finishedScore (_, info) = score (finalScore info)
 unsafeMapObj :: forall s. (Obj -> Obj) -> MutableMine s -> ST s (MutableMine s)
 unsafeMapObj f (mGrid, info) = do
     sequence_ $ [MV.read mGrid ix >>= MV.write mGrid ix . f | ix <- map (unsafeIndex (bounds info)) (range (bounds info))]
-    return (mGrid, info)
+    return $! (mGrid, info)
 
 -- please don't use this often. Really.
 findObjs :: forall s. (Obj -> Bool) -> MutableMine s -> ST s [Pos]
@@ -241,7 +241,7 @@ moveObj (mGrid, info) old new = do
     obj <- objAtM (mGrid, info) old
     setObj (mGrid, info) old Empty
     setObj (mGrid, info) new obj
-    return (mGrid, moveObjInfo info old new obj)
+    return $! (mGrid, moveObjInfo info old new obj)
 
 showCmd :: Cmd -> Char
 showCmd Left  = 'L'

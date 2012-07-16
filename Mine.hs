@@ -80,13 +80,13 @@ findOpenLift (_, info) = liftLoc info
 -- if the move is possible, return Just result
 -- if the move is not possible, return Nothing
 robotCmd :: forall s. MutableMine s -> Cmd -> ST s (Maybe (MutableMine s))
-robotCmd mine Abort             = return . Just . failure $ mine
+robotCmd mine Abort             = return $! Just . failure $ mine
 {-
 robotCmd mine Cut
     | numberRazors (beardData mine) > 0 &&
       beardsNearby mine > 0     = return . Just . applyRazor $ mine
     | otherwise                 = return Nothing -}
-robotCmd mine Wait              = return . Just $ mine
+robotCmd mine Wait              = return $! Just mine
 robotCmd mine cmd = do
     let loc   = robotPos mine
         dest  = move loc cmd
@@ -111,7 +111,7 @@ pushObj mine cmd
             Empty -> do
                 mine'  <- moveObj mine dest dest2
                 mine'' <- moveObj mine' loc dest
-                return . Just . incSteps $ mine''
+                return $! Just . incSteps $ mine''
             _ -> return Nothing
     | otherwise = return Nothing
     where loc   = robotPos mine
@@ -152,14 +152,14 @@ moveRocks :: forall s. MutableMine s -> ST s (Maybe (MutableMine s))
 moveRocks mine = do
     oldNewPairs  <- mapM getPair (rocklikePos mine)
     if not (any (isJust . snd) oldNewPairs)
-        then return (Just mine)
+        then return $! Just mine
         else do
             oldRockAbove <- isRocklike <$> objAtM mine above
             mine' <- foldM maybeMove mine oldNewPairs
             newRockAbove <- isRocklike <$> objAtM mine' above
             if newRockAbove && not oldRockAbove
                 then return Nothing
-                else return (Just mine')
+                else return $! Just mine'
 
     where
     getPair pos = newRockPos mine pos >>= \new -> return (pos,new)
