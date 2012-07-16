@@ -301,13 +301,13 @@ initParseObjs grid bounds' =
     , robot
     , lift)
     where
-    interesting (obj, _) = obj `elem` [Lambda, Rock, Beard, OpenLift, ClosedLift, HOLambda, Robot]
+    interesting (obj, _)      = obj `elem` [Lambda, Rock, Beard, OpenLift, ClosedLift, HOLambda, Robot]
     ((Robot, robot):relevant) = sort $ filter interesting (zip (toList grid) (range bounds'))
-    (rocks, objs) = span ((== Rock) . fst) relevant
-    (lambdas, objs') = span ((== Lambda) . fst) objs
-    (lift, objs''') = case objs' of
-        (OpenLift, pos):objs''   -> (pos, objs'')
+    (rocks, objs)             = span ((== Rock) . fst) relevant
+    (lambdas, objs')          = span ((== Lambda) . fst) objs
+    (lift, objs''')           = case objs' of
+        (OpenLift  , pos):objs''   -> (pos, objs'')
         (ClosedLift, pos):objs'' -> (pos, objs'')
-    (beards, objs'''') = span ((== Beard) . fst) objs'''
-    (hos, _) = span ((== HOLambda) . fst) objs''''
+    (beards, objs'''')        = span ((== Beard) . fst) objs'''
+    (hos, _)                  = span ((== HOLambda) . fst) objs''''
     

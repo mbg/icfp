@@ -147,7 +147,7 @@ updateEnv Nothing = return Nothing
 
 -- moves the rocks in the mine and also returns if it actually moved any
 -- if we have a rock above a robot's head that wasn't there in the original mine, return Nothing
--- also change falled hoLambdas into Lambdas
+-- TODO: change falled hoLambdas into Lambdas
 moveRocks :: forall s. MutableMine s -> ST s (Maybe (MutableMine s))
 moveRocks mine = do
     oldNewPairs  <- mapM getPair (rocklikePos mine)
@@ -155,7 +155,7 @@ moveRocks mine = do
         then return $! Just mine
         else do
             oldRockAbove <- isRocklike <$> objAtM mine above
-            mine' <- foldM maybeMove mine oldNewPairs
+            mine'        <- foldM maybeMove mine oldNewPairs
             newRockAbove <- isRocklike <$> objAtM mine' above
             if newRockAbove && not oldRockAbove
                 then return Nothing
@@ -173,28 +173,26 @@ newRockPos :: forall s. MutableMine s -> Pos -> ST s (Maybe Pos)
 newRockPos mine pos = do
     objDown <- objAtM mine down
     case objDown of
-        Lambda -> do
-            objRight  <- objAtM mine right
-            objDRight <- objAtM mine downRight
-            case (objRight, objDRight) of
-                (Empty, Empty) -> return (Just downRight)
-                _              -> return (Nothing)
+        Lambda -> tryFallRight
         Empty  -> return (Just down)
         _ | isRocklike objDown -> do
-            objRight  <- objAtM mine right
-            objDRight <- objAtM mine downRight
-            case (objRight, objDRight) of
-                (Empty, Empty) -> return (Just downRight)
-                _ -> do
-                    objLeft <- objAtM mine left
-                    objDLeft <- objAtM mine downLeft
-                    case (objLeft, objDLeft) of
-                        (Empty, Empty) -> return (Just downLeft)
-                        _ -> return Nothing
+                mResult <- tryFallRight
+                if isJust mResult then return mResult else tryFallLeft
           | otherwise -> return Nothing
     where down      = move pos Down
           downLeft  = move (move pos Down) Left
           downRight = move (move pos Down) Right
           left      = move pos Left
           right     = move pos Right
-
+          tryFallRight = do
+            objRight  <- objAtM mine right
+            objDRight <- objAtM mine downRight
+            case (objRight, objDRight) of
+                (Empty, Empty) -> return (Just downRight)
+                _              -> return Nothing
+          tryFallLeft =  do
+            objLeft <- objAtM mine left
+            objDLeft <- objAtM mine downLeft
+            case (objLeft, objDLeft) of
+                (Empty, Empty) -> return (Just downLeft)
+                _              -> return Nothing
