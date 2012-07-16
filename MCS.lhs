@@ -99,7 +99,7 @@ djm: moved to Mine
 >     then return $ nodePath n
 >     else if Abort `elem` nodePath n
 >       then addAbort (nodePath n) >> mcs'
->       else if trace (showMine $ nodeMine n) (hasOpenLift (nodeMine n))
+>       else if {-trace (showMine $ nodeMine n)-} (hasOpenLift (nodeMine n))
 >          then do
 >            addOpen $ makeNode (nodePath n) $ findLiftPath (nodeMine n)
 >            mcs'
